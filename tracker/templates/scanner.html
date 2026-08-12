@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banarasi Tracker V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
+        <!-- Header -->
+        <div class="bg-blue-800 text-white p-4 text-center">
+            <h1 class="text-2xl font-bold">Banarasi Tracker</h1>
+        </div>
+
+        <!-- Mode Selector -->
+        <div class="flex border-b">
+            <button id="btn-inbound" class="flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800" onclick="setMode('INBOUND')">Log Inbound</button>
+            <button id="btn-outbound" class="flex-1 py-3 text-lg font-bold text-gray-500" onclick="setMode('OUTBOUND')">Dispatch</button>
+        </div>
+
+        <!-- Camera Container -->
+        <div class="p-4">
+            <div id="reader" class="w-full bg-black rounded-lg overflow-hidden border-2 border-gray-300"></div>
+            <p id="scan-status" class="text-center mt-2 font-bold text-blue-600">Waiting for scan...</p>
+        </div>
+
+        <!-- Dynamic Form -->
+        <div id="form-container" class="p-4 hidden">
+            <h2 id="form-title" class="text-xl font-bold mb-4">Item Details</h2>
+            <input type="hidden" id="scanned-qr">
+            
+            <!-- Inbound Fields -->
+            <div id="inbound-fields" class="space-y-4">
+                <select id="product_type" class="w-full p-3 border rounded text-lg">
+                    <option value="SUIT">Suit</option>
+                    <option value="SAREE">Saree</option>
+                    <option value="GHARARA">Gharara</option>
+                </select>
+                <input type="text" id="weaver_name" placeholder="Weaver Name (Optional)" class="w-full p-3 border rounded text-lg">
+            </div>
+
+            <!-- Outbound Fields -->
+            <div id="outbound-fields" class="space-y-4 hidden">
+                <input type="number" id="pincode" placeholder="6-Digit Pincode" class="w-full p-3 border rounded text-lg">
+                <select id="sales_channel" class="w-full p-3 border rounded text-lg">
+                    <option value="RETAIL">Retail Shop</option>
+                    <option value="WHOLESALE">Wholesale B2B</option>
+                    <option value="ONLINE">Online E-commerce</option>
+                </select>
+            </div>
+
+            <!-- Submit Button -->
+            <button onclick="submitData()" class="w-full bg-green-600 text-white font-bold text-xl py-4 rounded mt-6 shadow-md active:bg-green-700">
+                SAVE DATA
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'INBOUND';
+        let html5QrcodeScanner;
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('inbound-fields').classList.toggle('hidden', mode !== 'INBOUND');
+            document.getElementById('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
+            
+            // Toggle active tab styling
+            document.getElementById('btn-inbound').className = mode === 'INBOUND' ? "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800" : "flex-1 py-3 text-lg font-bold text-gray-500";
+            document.getElementById('btn-outbound').className = mode === 'OUTBOUND' ? "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800" : "flex-1 py-3 text-lg font-bold text-gray-500";
+            
+            resetScanner();
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            document.getElementById('scanned-qr').value = decodedText;
+            document.getElementById('scan-status').innerText = "QR Scanned! Fill details below.";
+            document.getElementById('scan-status').className = "text-center mt-2 font-bold text-green-600";
+            document.getElementById('form-container').classList.remove('hidden');
+            html5QrcodeScanner.pause(true); // Pause scanning while filling form
+        }
+
+        function resetScanner() {
+            document.getElementById('form-container').classList.add('hidden');
+            document.getElementById('scan-status').innerText = "Waiting for scan...";
+            document.getElementById('scan-status').className = "text-center mt-2 font-bold text-blue-600";
+            if (html5QrcodeScanner) html5QrcodeScanner.resume();
+        }
+
+        async function submitData() {
+            const qr_id = document.getElementById('scanned-qr').value;
+            const endpoint = currentMode === 'INBOUND' ? '/api/inbound/' : '/api/outbound/';
+            
+            let payload = { qr_id: qr_id };
+            
+            if (currentMode === 'INBOUND') {
+                payload.product_type = document.getElementById('product_type').value;
+                payload.weaver_name = document.getElementById('weaver_name').value;
+            } else {
+                payload.pincode = document.getElementById('pincode').value;
+                payload.sales_channel = document.getElementById('sales_channel').value;
+            }
+
+            try {
+                let response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                let result = await response.json();
+                
+                if (response.ok) {
+                    alert(result.message);
+                    resetScanner();
+                } else {
+                    alert("Error: " + (result.error || "Something went wrong"));
+                }
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        // Initialize Camera
+        window.onload = () => {
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+            html5QrcodeScanner.render(onScanSuccess);
+        };
+    </script>
+</body>
+</html>
