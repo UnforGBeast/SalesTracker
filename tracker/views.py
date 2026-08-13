@@ -1,3 +1,4 @@
+from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -5,6 +6,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import requests
 from .models import FinishedProduct, InventoryStatus
+
+def scanner_ui(request):
+    """ Serves the mobile HTML scanner interface """
+    return render(request, 'scanner.html')
 
 @csrf_exempt
 @api_view(['POST'])
