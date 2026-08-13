@@ -59,76 +59,111 @@
         </div>
     </div>
 
-    <script>
-        let currentMode = 'INBOUND';
-        let html5QrcodeScanner;
+        <script>
+            let currentMode = 'INBOUND';
+            let html5QrCode;
 
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('inbound-fields').classList.toggle('hidden', mode !== 'INBOUND');
-            document.getElementById('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
-            
-            // Toggle active tab styling
-            document.getElementById('btn-inbound').className = mode === 'INBOUND' ? "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800" : "flex-1 py-3 text-lg font-bold text-gray-500";
-            document.getElementById('btn-outbound').className = mode === 'OUTBOUND' ? "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800" : "flex-1 py-3 text-lg font-bold text-gray-500";
-            
-            resetScanner();
-        }
+            function setMode(mode) {
+                currentMode = mode;
+                document.getElementById('inbound-fields').classList.toggle('hidden', mode !== 'INBOUND');
+                document.getElementById('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
 
-        function onScanSuccess(decodedText, decodedResult) {
-            document.getElementById('scanned-qr').value = decodedText;
-            document.getElementById('scan-status').innerText = "QR Scanned! Fill details below.";
-            document.getElementById('scan-status').className = "text-center mt-2 font-bold text-green-600";
-            document.getElementById('form-container').classList.remove('hidden');
-            html5QrcodeScanner.pause(true); // Pause scanning while filling form
-        }
+                // Toggle active tab styling
+                document.getElementById('btn-inbound').className = mode === 'INBOUND' ? "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800" : "flex-1 py-3 text-lg font-bold text-gray-500";
+                document.getElementById('btn-outbound').className = mode === 'OUTBOUND' ? "flex-1 py-3 text-lg font-bold text-gray-500" : "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800";
 
-        function resetScanner() {
-            document.getElementById('form-container').classList.add('hidden');
-            document.getElementById('scan-status').innerText = "Waiting for scan...";
-            document.getElementById('scan-status').className = "text-center mt-2 font-bold text-blue-600";
-            if (html5QrcodeScanner) html5QrcodeScanner.resume();
-        }
+                resetScanner();
+            }
 
-        async function submitData() {
-            const qr_id = document.getElementById('scanned-qr').value;
-            const endpoint = currentMode === 'INBOUND' ? '/api/inbound/' : '/api/outbound/';
-            
-            let payload = { qr_id: qr_id };
-            
-            if (currentMode === 'INBOUND') {
+            function onScanSuccess(decodedText, decodedResult) {
+                document.getElementById('scanned-qr').value = decodedText;
+                document.getElementById('scan-status').innerText = "QR Scanned! Fill details below.";
+                document.getElementById('scan-status').className = "text-center mt-2 font-bold text-green-600";
+                document.getElementById('form-container').classList.remove('hidden');
+
+                if (html5QrCode) {
+                    html5QrCode.pause(true); // Pause scanner while filling form
+                }
+            }
+
+            function resetScanner() {
+                document.getElementById('form-container').classList.add('hidden');
+                document.getElementById('scan-status').innerText = "Waiting for scan...";
+                document.getElementById('scan-status').className = "text-center mt-2 font-bold text-blue-600";
+
+                if (html5QrCode) {
+                    try {
+                        html5QrCode.resume();
+                    } catch (e) {
+                        // If not paused, re-initialize camera
+                        startCamera();
+                    }
+                }
+            }
+
+           async function submitData() {
+                const qr_id = document.getElementById('scanned-qr').value;
+                const endpoint = currentMode === 'INBOUND' ? '/api/inbound/' : '/api/outbound/';
+    
+                 let payload = { qr_id: qr_id };
+    
+                if (currentMode === 'INBOUND') {
                 payload.product_type = document.getElementById('product_type').value;
                 payload.weaver_name = document.getElementById('weaver_name').value;
-            } else {
-                payload.pincode = document.getElementById('pincode').value;
-                payload.sales_channel = document.getElementById('sales_channel').value;
-            }
-
-            try {
-                let response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                let result = await response.json();
-                
-                if (response.ok) {
-                    alert(result.message);
-                    resetScanner();
-                } else {
-                    alert("Error: " + (result.error || "Something went wrong"));
+                 } else {
+                    payload.pincode = document.getElementById('pincode').value;
+                    payload.sales_channel = document.getElementById('sales_channel').value;
                 }
-            } catch (error) {
-                alert("Network error. Please try again.");
-            }
-        }
 
-        // Initialize Camera
-        window.onload = () => {
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-            html5QrcodeScanner.render(onScanSuccess);
-        };
-    </script>
+        try {
+            let response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            let result;
+            const contentType = response.headers.get("content-type");
+        
+        // Safely parse JSON if returned
+            if (contentType && contentType.includes("application/json")) {
+                result = await response.json();
+            } else {
+                alert(`Server Error (${response.status}): Check server logs.`);
+                return;
+            }
+
+            if (response.ok) {
+                alert(result.message);
+                resetScanner();
+            } else {
+                alert("Error: " + (result.error || "Something went wrong"));
+            }
+        } catch (error) {
+            alert("Connection Error: " + error.message);
+        }
+    }
+            function startCamera() {
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("reader");
+                }
+
+                // Auto-start back camera automatically
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    onScanSuccess
+                ).catch(err => {
+                    document.getElementById('scan-status').innerText = "Camera access error or permission denied.";
+                    document.getElementById('scan-status').className = "text-center mt-2 font-bold text-red-600";
+                });
+            }
+
+            // Initialize Camera immediately on load
+            window.onload = startCamera;
+        </script>
 </body>
 </html>

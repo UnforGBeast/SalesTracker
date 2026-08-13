@@ -13,19 +13,16 @@ class SalesChannel(models.TextChoices):
     ONLINE = 'ONLINE', 'Online E-commerce'
 
 class FinishedProduct(models.Model):
-    # Core ID used in the QR Code
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Allows both standard UUIDs AND custom printed text QR strings
+    id = models.CharField(primary_key=True, max_length=100, default=uuid.uuid4, editable=True)
     
-    # Product Details
-    product_type = models.CharField(max_length=50, help_text="e.g., SUIT, SAREE, GHARARA")
-    design_work = models.CharField(max_length=100, blank=True, null=True, help_text="e.g., JANGAL KADWA")
+    product_type = models.CharField(max_length=50)
+    design_work = models.CharField(max_length=100, blank=True, null=True)
     weaver_name = models.CharField(max_length=100, blank=True, null=True)
     
-    # Lifecycle Tracking
     status = models.CharField(max_length=20, choices=InventoryStatus.choices, default=InventoryStatus.IN_STOCK)
     date_entered = models.DateTimeField(default=timezone.now)
     
-    # Dispatch Details
     date_dispatched = models.DateTimeField(null=True, blank=True)
     sales_channel = models.CharField(max_length=20, choices=SalesChannel.choices, null=True, blank=True)
     pincode = models.CharField(max_length=6, null=True, blank=True)
