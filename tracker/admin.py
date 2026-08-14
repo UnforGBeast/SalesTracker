@@ -1,14 +1,16 @@
+from unfold.admin import ModelAdmin
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import FinishedProduct
 
+
 # Customize Global Admin Headers
-admin.site.site_header = "Banarasi Tracker Administration"
-admin.site.site_title = "Warehouse Admin"
+admin.site.site_header = "Silk O Zari Administration"
+admin.site.site_title = "Silk O Zari Portal"
 admin.site.index_title = "Inventory Dashboard"
 
 @admin.register(FinishedProduct)
-class FinishedProductAdmin(admin.ModelAdmin):
+class FinishedProductAdmin(ModelAdmin):
     # What shows up in the main table
     list_display = ('id', 'product_type', 'design_work', 'weaver_name', 'status_badge', 'derived_city', 'date_entered')
     

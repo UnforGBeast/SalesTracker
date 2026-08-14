@@ -6,3 +6,4 @@ reportlab
 requests
 gunicorn
 python-dotenv
+django-unfold
