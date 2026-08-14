@@ -8,13 +8,11 @@ import requests
 from .models import FinishedProduct, InventoryStatus
 
 def scanner_ui(request):
-    """ Serves the mobile HTML scanner interface """
     return render(request, 'scanner.html')
 
 @csrf_exempt
 @api_view(['POST'])
 def log_inbound(request):
-    """ Logs a new item to the shelf """
     qr_id = request.data.get('qr_id')
     product_type = request.data.get('product_type')
     
@@ -22,22 +20,31 @@ def log_inbound(request):
         return Response({'error': 'Missing QR ID or Product Type'}, status=status.HTTP_400_BAD_REQUEST)
         
     try:
-        # Get existing or create new item
-        product, created = FinishedProduct.objects.get_or_create(id=qr_id)
-        product.product_type = product_type
-        product.design_work = request.data.get('design_work', '')
-        product.weaver_name = request.data.get('weaver_name', '')
-        product.status = InventoryStatus.IN_STOCK
-        product.date_entered = timezone.now()
-        product.save()
+        # Prevent duplicate inbound scanning
+        existing_product = FinishedProduct.objects.filter(id=qr_id).first()
+        if existing_product:
+            if existing_product.status == InventoryStatus.IN_STOCK:
+                return Response({'error': 'This item is already logged IN_STOCK!'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({'error': 'This item has already been DISPATCHED and cannot be logged inbound again.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create new entry
+        FinishedProduct.objects.create(
+            id=qr_id,
+            product_type=product_type,
+            design_work=request.data.get('design_work', ''),
+            weaver_name=request.data.get('weaver_name', ''),
+            status=InventoryStatus.IN_STOCK,
+            date_entered=timezone.now()
+        )
         return Response({'message': 'Item logged into inventory successfully!'})
     except Exception as e:
-        return Response({'error': f"Database/Format Error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': f"Database Error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @csrf_exempt
 @api_view(['POST'])
 def log_outbound(request):
-    """ Logs an item out of the warehouse and fetches location data """
     qr_id = request.data.get('qr_id')
     pincode = request.data.get('pincode')
     channel = request.data.get('sales_channel')
@@ -47,21 +54,30 @@ def log_outbound(request):
         
     try:
         product = FinishedProduct.objects.get(id=qr_id)
+        
+        # Prevent double dispatching
+        if product.status == InventoryStatus.DISPATCHED:
+            date_str = product.date_dispatched.strftime("%d-%b-%Y") if product.date_dispatched else "an unknown date"
+            return Response({'error': f'Item already marked as DISPATCHED on {date_str}!'}, status=status.HTTP_400_BAD_REQUEST)
+            
     except FinishedProduct.DoesNotExist:
-        return Response({'error': 'Item not found in inventory'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': f"Invalid ID format: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Item not found! You must log it Inbound first.'}, status=status.HTTP_404_NOT_FOUND)
         
     state, city = "", ""
     if pincode:
         try:
-            resp = requests.get(f'https://api.postalpincode.in/pincode/{pincode}', timeout=3)
-            if resp.status_code == 200 and resp.json()[0]['Status'] == 'Success':
-                post_office = resp.json()[0]['PostOffice'][0]
-                state = post_office['State']
-                city = post_office['District']
-        except requests.exceptions.RequestException:
-            pass
+            # Bypass anti-bot filters with a User-Agent header
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            resp = requests.get(f'https://api.postalpincode.in/pincode/{pincode}', headers=headers, timeout=5)
+            
+            if resp.status_code == 200:
+                data = resp.json()[0]
+                if data.get('Status') == 'Success':
+                    post_office = data['PostOffice'][0]
+                    state = post_office.get('State', '')
+                    city = post_office.get('District', '')
+        except Exception:
+            pass # Fail silently if API goes down so it doesn't block the dispatch
             
     product.status = InventoryStatus.DISPATCHED
     product.date_dispatched = timezone.now()

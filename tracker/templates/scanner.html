@@ -18,7 +18,7 @@
         <!-- Mode Selector -->
         <div class="flex border-b">
             <button id="btn-inbound" class="flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800" onclick="setMode('INBOUND')">Log Inbound</button>
-            <button id="btn-outbound" class="flex-1 py-3 text-lg font-bold text-gray-500" onclick="setMode('OUTBOUND')">Dispatch</button>
+            <button id="btn-outbound" class="flex-1 py-3 text-lg font-bold text-gray-500 bg-gray-50 border-b-4 border-transparent" onclick="setMode('OUTBOUND')">Dispatch</button>
         </div>
 
         <!-- Camera Container -->
@@ -39,6 +39,8 @@
                     <option value="SAREE">Saree</option>
                     <option value="GHARARA">Gharara</option>
                 </select>
+                <!-- Added Design Work Field -->
+                <input type="text" id="design_work" placeholder="Design Work (e.g., Jangal Kadwa)" class="w-full p-3 border rounded text-lg">
                 <input type="text" id="weaver_name" placeholder="Weaver Name (Optional)" class="w-full p-3 border rounded text-lg">
             </div>
 
@@ -59,111 +61,112 @@
         </div>
     </div>
 
-        <script>
-            let currentMode = 'INBOUND';
-            let html5QrCode;
+    <script>
+        let currentMode = 'INBOUND';
+        let html5QrCode;
 
-            function setMode(mode) {
-                currentMode = mode;
-                document.getElementById('inbound-fields').classList.toggle('hidden', mode !== 'INBOUND');
-                document.getElementById('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
+        function setMode(mode) {
+            currentMode = mode;
+            
+            const inFields = document.getElementById('inbound-fields');
+            const outFields = document.getElementById('outbound-fields');
+            const btnIn = document.getElementById('btn-inbound');
+            const btnOut = document.getElementById('btn-outbound');
 
-                // Toggle active tab styling
-                document.getElementById('btn-inbound').className = mode === 'INBOUND' ? "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800" : "flex-1 py-3 text-lg font-bold text-gray-500";
-                document.getElementById('btn-outbound').className = mode === 'OUTBOUND' ? "flex-1 py-3 text-lg font-bold text-gray-500" : "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800";
-
-                resetScanner();
-            }
-
-            function onScanSuccess(decodedText, decodedResult) {
-                document.getElementById('scanned-qr').value = decodedText;
-                document.getElementById('scan-status').innerText = "QR Scanned! Fill details below.";
-                document.getElementById('scan-status').className = "text-center mt-2 font-bold text-green-600";
-                document.getElementById('form-container').classList.remove('hidden');
-
-                if (html5QrCode) {
-                    html5QrCode.pause(true); // Pause scanner while filling form
-                }
-            }
-
-            function resetScanner() {
-                document.getElementById('form-container').classList.add('hidden');
-                document.getElementById('scan-status').innerText = "Waiting for scan...";
-                document.getElementById('scan-status').className = "text-center mt-2 font-bold text-blue-600";
-
-                if (html5QrCode) {
-                    try {
-                        html5QrCode.resume();
-                    } catch (e) {
-                        // If not paused, re-initialize camera
-                        startCamera();
-                    }
-                }
-            }
-
-           async function submitData() {
-                const qr_id = document.getElementById('scanned-qr').value;
-                const endpoint = currentMode === 'INBOUND' ? '/api/inbound/' : '/api/outbound/';
-    
-                 let payload = { qr_id: qr_id };
-    
-                if (currentMode === 'INBOUND') {
-                payload.product_type = document.getElementById('product_type').value;
-                payload.weaver_name = document.getElementById('weaver_name').value;
-                 } else {
-                    payload.pincode = document.getElementById('pincode').value;
-                    payload.sales_channel = document.getElementById('sales_channel').value;
-                }
-
-        try {
-            let response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            let result;
-            const contentType = response.headers.get("content-type");
-        
-        // Safely parse JSON if returned
-            if (contentType && contentType.includes("application/json")) {
-                result = await response.json();
+            if (mode === 'INBOUND') {
+                inFields.classList.remove('hidden');
+                outFields.classList.add('hidden');
+                btnIn.className = "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800";
+                btnOut.className = "flex-1 py-3 text-lg font-bold text-gray-500 bg-gray-50 border-b-4 border-transparent";
             } else {
-                alert(`Server Error (${response.status}): Check server logs.`);
-                return;
+                inFields.classList.add('hidden');
+                outFields.classList.remove('hidden');
+                btnIn.className = "flex-1 py-3 text-lg font-bold text-gray-500 bg-gray-50 border-b-4 border-transparent";
+                btnOut.className = "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800";
             }
-
-            if (response.ok) {
-                alert(result.message);
-                resetScanner();
-            } else {
-                alert("Error: " + (result.error || "Something went wrong"));
-            }
-        } catch (error) {
-            alert("Connection Error: " + error.message);
+            
+            resetScanner();
         }
-    }
-            function startCamera() {
-                if (!html5QrCode) {
-                    html5QrCode = new Html5Qrcode("reader");
-                }
 
-                // Auto-start back camera automatically
-                html5QrCode.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
-                    onScanSuccess
-                ).catch(err => {
-                    document.getElementById('scan-status').innerText = "Camera access error or permission denied.";
-                    document.getElementById('scan-status').className = "text-center mt-2 font-bold text-red-600";
-                });
+        function onScanSuccess(decodedText) {
+            document.getElementById('scanned-qr').value = decodedText;
+            document.getElementById('scan-status').innerText = "QR Scanned! Fill details below.";
+            document.getElementById('scan-status').className = "text-center mt-2 font-bold text-green-600";
+            document.getElementById('form-container').classList.remove('hidden');
+            
+            if (html5QrCode) {
+                html5QrCode.pause(true); 
+            }
+        }
+
+        function resetScanner() {
+            document.getElementById('form-container').classList.add('hidden');
+            document.getElementById('scan-status').innerText = "Waiting for scan...";
+            document.getElementById('scan-status').className = "text-center mt-2 font-bold text-blue-600";
+            
+            if (html5QrCode) {
+                try {
+                    html5QrCode.resume();
+                } catch (e) {
+                    startCamera();
+                }
+            }
+        }
+
+        async function submitData() {
+            const qr_id = document.getElementById('scanned-qr').value;
+            const endpoint = currentMode === 'INBOUND' ? '/api/inbound/' : '/api/outbound/';
+            
+            let payload = { qr_id: qr_id };
+            
+            if (currentMode === 'INBOUND') {
+                payload.product_type = document.getElementById('product_type').value;
+                payload.design_work = document.getElementById('design_work').value;
+                payload.weaver_name = document.getElementById('weaver_name').value;
+            } else {
+                payload.pincode = document.getElementById('pincode').value;
+                payload.sales_channel = document.getElementById('sales_channel').value;
             }
 
-            // Initialize Camera immediately on load
-            window.onload = startCamera;
-        </script>
+            try {
+                let response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    let result = await response.json();
+                    if (response.ok) {
+                        alert(result.message);
+                        resetScanner();
+                    } else {
+                        alert("Error: " + result.error);
+                    }
+                } else {
+                    alert(`Server Error (${response.status}). Please check backend.`);
+                }
+            } catch (error) {
+                alert("Connection Error. Please check your network.");
+            }
+        }
+
+        function startCamera() {
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
+            }
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess
+            ).catch(err => {
+                document.getElementById('scan-status').innerText = "Camera permission denied.";
+                document.getElementById('scan-status').className = "text-center mt-2 font-bold text-red-600";
+            });
+        }
+
+        window.onload = startCamera;
+    </script>
 </body>
 </html>
