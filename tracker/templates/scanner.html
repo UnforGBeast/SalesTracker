@@ -42,7 +42,6 @@
                 <input type="text" id="design_work" placeholder="Design Work" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
                 <input type="text" id="weaver_name" placeholder="Weaver Name" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
                 
-                <!-- Image Capture Field -->
                 <label class="block text-sm font-medium text-slate-700 mt-2">Product Image (Optional)</label>
                 <input type="file" id="product_image" accept="image/*" capture="environment" class="w-full p-2 bg-slate-50 border rounded-lg text-sm text-slate-500">
             </div>
@@ -58,10 +57,10 @@
             </div>
 
             <div id="return-fields" class="space-y-3 hidden text-center">
-                <p class="text-sm text-slate-600">Scan the barcode to log this item back into the warehouse inventory.</p>
+                <p class="text-sm text-slate-600">Scanning barcode automatically processes the return.</p>
             </div>
 
-            <button onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-6 shadow-sm">
+            <button id="submit-btn" onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-6 shadow-sm">
                 Save Record
             </button>
         </div>
@@ -77,6 +76,9 @@
             document.getElementById('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
             document.getElementById('return-fields').classList.toggle('hidden', mode !== 'RETURN');
             
+            // Hide submit button entirely during return mode since it auto-submits
+            document.getElementById('submit-btn').classList.toggle('hidden', mode === 'RETURN');
+            
             document.getElementById('btn-inbound').className = mode === 'INBOUND' ? "flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" : "flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent";
             document.getElementById('btn-outbound').className = mode === 'OUTBOUND' ? "flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" : "flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent";
             document.getElementById('btn-return').className = mode === 'RETURN' ? "flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" : "flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent";
@@ -84,23 +86,22 @@
             resetScanner();
         }
 
-       function onScanSuccess(decodedText) {
+        function onScanSuccess(decodedText) {
             document.getElementById('scanned-qr').value = decodedText;
             
+            // Always pause the camera immediately upon reading a code to prevent spamming
+            if (html5QrCode) {
+                html5QrCode.pause(true);
+            }
+
             if (currentMode === 'RETURN') {
-                // Instantly submit for returns, skipping the buggy camera pause entirely
                 document.getElementById('scan-status').innerText = "Processing Return...";
                 document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-blue-600";
                 submitData();
             } else {
-                // Normal behavior for Inbound/Dispatch
                 document.getElementById('scan-status').innerText = "✓ QR Scanned Successfully";
                 document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-emerald-600";
                 document.getElementById('form-container').classList.remove('hidden');
-                
-                if (html5QrCode) {
-                    html5QrCode.pause(true); 
-                }
             }
         }
 
@@ -109,8 +110,7 @@
             document.getElementById('scan-status').innerText = "Waiting for scanner...";
             document.getElementById('scan-status').className = "text-center mt-4 text-sm font-medium text-slate-500";
             
-            // Only attempt to resume if we actually paused it (Inbound/Dispatch)
-            if (html5QrCode && currentMode !== 'RETURN') {
+            if (html5QrCode) {
                 try {
                     html5QrCode.resume();
                 } catch (e) {
@@ -137,19 +137,12 @@
                 formData.append('sales_channel', document.getElementById('sales_channel').value);
             } else {
                 endpoint = '/api/return/';
-                if (response.ok) {
-                    alert(result.message);
-                    resetScanner();
-                } else {
-                    // Update this specific line:
-                    alert("Notice: " + (result.error || result.detail || "Server Error"));
-                }
             }
 
             try {
                 let response = await fetch(endpoint, {
                     method: 'POST',
-                    body: formData // No Content-Type header needed for FormData
+                    body: formData
                 });
                 
                 let result = await response.json();
@@ -157,10 +150,12 @@
                     alert(result.message);
                     resetScanner();
                 } else {
-                    alert("Notice: " + result.error);
+                    alert("Notice: " + (result.error || result.detail || "Server Error"));
+                    resetScanner();
                 }
             } catch (error) {
                 alert("Connection Error. Please check your network.");
+                resetScanner();
             }
         }
 
