@@ -4,7 +4,7 @@ from django.utils.html import format_html
 from .models import FinishedProduct
 import csv
 from django.http import HttpResponse
-
+from unfold.decorators import action
 
 
 
@@ -42,8 +42,35 @@ class FinishedProductAdmin(ModelAdmin):
     date_hierarchy = 'date_entered'
     # How many items per page before pagination
     list_per_page = 50
-    
-    actions = [export_as_csv]
+
+    actions_list = ["export_all_to_csv"]
+
+    @action(description="Export to Excel / CSV")
+    def export_all_to_csv(self, request):
+        """ Exports all items currently matching the user's active filters """
+        
+        # Get the queryset of whatever is currently filtered on the screen
+        queryset = self.get_changelist_instance(request).get_queryset(request)
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="silk_o_zari_inventory_report.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Barcode ID', 'Product Type', 'Design Work', 'Weaver', 
+            'Current Status', 'Date Entered', 'Date Dispatched', 
+            'Sales Channel', 'Destination City', 'Destination State'
+        ])
+        
+        for obj in queryset:
+            writer.writerow([
+                obj.id, obj.product_type, obj.design_work, obj.weaver_name, 
+                obj.status, obj.date_entered, obj.date_dispatched, 
+                obj.sales_channel, obj.derived_city, obj.derived_state
+            ])
+        return response
+        
+    # (Keep your existing status_badge function here)
 
     # Organizes the detail view into clean sections
     fieldsets = (
