@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,authentication_classes, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
@@ -46,6 +46,8 @@ def scanner_ui(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([])
 def log_inbound(request):
     qr_id = request.data.get('qr_id')
     product_type = request.data.get('product_type')
@@ -82,6 +84,8 @@ def log_inbound(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([])
 def log_outbound(request):
     qr_id = request.data.get('qr_id')
     pincode = request.data.get('pincode')
@@ -129,6 +133,8 @@ def log_outbound(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([])
 def log_return(request):
     qr_id = request.data.get('qr_id')
     if not qr_id:

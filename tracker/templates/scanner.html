@@ -119,6 +119,13 @@
                 formData.append('sales_channel', document.getElementById('sales_channel').value);
             } else {
                 endpoint = '/api/return/';
+                if (response.ok) {
+                    alert(result.message);
+                    resetScanner();
+                } else {
+                    // Update this specific line:
+                    alert("Notice: " + (result.error || result.detail || "Server Error"));
+                }
             }
 
             try {
