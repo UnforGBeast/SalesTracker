@@ -13,23 +13,22 @@ def scanner_ui(request):
 @csrf_exempt
 @api_view(['POST'])
 def log_inbound(request):
+    # Using request.data handles both JSON and FormData natively in Django Rest Framework
     qr_id = request.data.get('qr_id')
     product_type = request.data.get('product_type')
-    
+
     if not qr_id or not product_type:
         return Response({'error': 'Missing QR ID or Product Type'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
     try:
-        # Prevent duplicate inbound scanning
         existing_product = FinishedProduct.objects.filter(id=qr_id).first()
         if existing_product:
             if existing_product.status == InventoryStatus.IN_STOCK:
-                return Response({'error': 'This item is already logged IN_STOCK!'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Item is already IN_STOCK!'}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({'error': 'This item has already been DISPATCHED and cannot be logged inbound again.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Item already DISPATCHED. Use the Return tab.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create new entry
-        FinishedProduct.objects.create(
+        product = FinishedProduct.objects.create(
             id=qr_id,
             product_type=product_type,
             design_work=request.data.get('design_work', ''),
@@ -37,10 +36,34 @@ def log_inbound(request):
             status=InventoryStatus.IN_STOCK,
             date_entered=timezone.now()
         )
-        return Response({'message': 'Item logged into inventory successfully!'})
+
+        # Handle image upload if present
+        if 'product_image' in request.FILES:
+            product.product_image = request.FILES['product_image']
+            product.save()
+
+        return Response({'message': 'Item and image logged successfully!'})
     except Exception as e:
         return Response({'error': f"Database Error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
+@csrf_exempt
+@api_view(['POST'])
+def log_return(request):
+    qr_id = request.data.get('qr_id')
+    if not qr_id:
+        return Response({'error': 'Missing QR code'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        product = FinishedProduct.objects.get(id=qr_id)
+        if product.status == InventoryStatus.RETURNED or product.status == InventoryStatus.IN_STOCK:
+            return Response({'error': 'Item is already in the warehouse!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        product.status = InventoryStatus.RETURNED
+        # We intentionally leave the dispatch location data intact for analytics
+        product.save()
+        return Response({'message': 'Item marked as RETURNED and placed back in inventory.'})
+    except FinishedProduct.DoesNotExist:
+        return Response({'error': 'Item not found in system!'}, status=status.HTTP_404_NOT_FOUND)
 
 @csrf_exempt
 @api_view(['POST'])

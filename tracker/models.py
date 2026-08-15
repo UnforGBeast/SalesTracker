@@ -15,6 +15,7 @@ class SalesChannel(models.TextChoices):
 class FinishedProduct(models.Model):
     # Allows both standard UUIDs AND custom printed text QR strings
     id = models.CharField(primary_key=True, max_length=100, default=uuid.uuid4, editable=True)
+    product_image = models.ImageField(upload_to='product_images/', null=True, blank=True)
     
     product_type = models.CharField(max_length=50,db_index=True)
     design_work = models.CharField(max_length=100, db_index=True, blank=True, null=True)

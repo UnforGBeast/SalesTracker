@@ -3,60 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banarasi Tracker V2</title>
+    <title>Scanner Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans">
-
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
-        <!-- Header -->
-        <div class="bg-blue-800 text-white p-4 text-center">
-            <h1 class="text-2xl font-bold">Banarasi Tracker</h1>
+<body class="bg-slate-50 text-slate-800 antialiased">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-sm border-x border-slate-200">
+        <div class="pt-8 pb-6 px-6 text-center border-b border-slate-100">
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">[CLIENT COMPANY NAME]</h1>
         </div>
 
-        <!-- Mode Selector -->
-        <div class="flex border-b">
-            <button id="btn-inbound" class="flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800" onclick="setMode('INBOUND')">Log Inbound</button>
-            <button id="btn-outbound" class="flex-1 py-3 text-lg font-bold text-gray-500 bg-gray-50 border-b-4 border-transparent" onclick="setMode('OUTBOUND')">Dispatch</button>
+        <!-- 3-Way Mode Selector -->
+        <div class="flex border-b border-slate-200 text-center">
+            <button id="btn-inbound" class="flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" onclick="setMode('INBOUND')">INBOUND</button>
+            <button id="btn-outbound" class="flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent" onclick="setMode('OUTBOUND')">DISPATCH</button>
+            <button id="btn-return" class="flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent" onclick="setMode('RETURN')">RETURN</button>
         </div>
 
-        <!-- Camera Container -->
-        <div class="p-4">
-            <div id="reader" class="w-full bg-black rounded-lg overflow-hidden border-2 border-gray-300"></div>
-            <p id="scan-status" class="text-center mt-2 font-bold text-blue-600">Waiting for scan...</p>
+        <div class="p-6">
+            <div id="reader" class="w-full bg-slate-900 rounded-xl overflow-hidden shadow-inner"></div>
+            <p id="scan-status" class="text-center mt-4 text-sm font-medium text-slate-500">Waiting for scanner...</p>
         </div>
 
-        <!-- Dynamic Form -->
-        <div id="form-container" class="p-4 hidden">
-            <h2 id="form-title" class="text-xl font-bold mb-4">Item Details</h2>
+        <div id="form-container" class="px-6 pb-8 hidden">
             <input type="hidden" id="scanned-qr">
             
-            <!-- Inbound Fields -->
-            <div id="inbound-fields" class="space-y-4">
-                <select id="product_type" class="w-full p-3 border rounded text-lg">
+            <div id="inbound-fields" class="space-y-3">
+                <select id="product_type" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
+                    <option value="" disabled selected>Select Product Type</option>
                     <option value="SUIT">Suit</option>
                     <option value="SAREE">Saree</option>
                     <option value="GHARARA">Gharara</option>
+                    <option value="DUPATTA">Dupatta</option>
+                    <option value="FABRIC">Fabric</option>
                 </select>
-                <!-- Added Design Work Field -->
-                <input type="text" id="design_work" placeholder="Design Work (e.g., Jangal Kadwa)" class="w-full p-3 border rounded text-lg">
-                <input type="text" id="weaver_name" placeholder="Weaver Name (Optional)" class="w-full p-3 border rounded text-lg">
+                <input type="text" id="design_work" placeholder="Design Work" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
+                <input type="text" id="weaver_name" placeholder="Weaver Name" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
+                
+                <!-- Image Capture Field -->
+                <label class="block text-sm font-medium text-slate-700 mt-2">Product Image (Optional)</label>
+                <input type="file" id="product_image" accept="image/*" capture="environment" class="w-full p-2 bg-slate-50 border rounded-lg text-sm text-slate-500">
             </div>
 
-            <!-- Outbound Fields -->
-            <div id="outbound-fields" class="space-y-4 hidden">
-                <input type="number" id="pincode" placeholder="6-Digit Pincode" class="w-full p-3 border rounded text-lg">
-                <select id="sales_channel" class="w-full p-3 border rounded text-lg">
+            <div id="outbound-fields" class="space-y-3 hidden">
+                <input type="number" id="pincode" placeholder="6-Digit Pincode" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
+                <select id="sales_channel" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
+                    <option value="" disabled selected>Select Sales Channel</option>
                     <option value="RETAIL">Retail Shop</option>
                     <option value="WHOLESALE">Wholesale B2B</option>
                     <option value="ONLINE">Online E-commerce</option>
                 </select>
             </div>
 
-            <!-- Submit Button -->
-            <button onclick="submitData()" class="w-full bg-green-600 text-white font-bold text-xl py-4 rounded mt-6 shadow-md active:bg-green-700">
-                SAVE DATA
+            <div id="return-fields" class="space-y-3 hidden text-center">
+                <p class="text-sm text-slate-600">Scan the barcode to log this item back into the warehouse inventory.</p>
+            </div>
+
+            <button onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-6 shadow-sm">
+                Save Record
             </button>
         </div>
     </div>
@@ -67,85 +73,66 @@
 
         function setMode(mode) {
             currentMode = mode;
+            document.getElementById('inbound-fields').classList.toggle('hidden', mode !== 'INBOUND');
+            document.getElementById('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
+            document.getElementById('return-fields').classList.toggle('hidden', mode !== 'RETURN');
             
-            const inFields = document.getElementById('inbound-fields');
-            const outFields = document.getElementById('outbound-fields');
-            const btnIn = document.getElementById('btn-inbound');
-            const btnOut = document.getElementById('btn-outbound');
-
-            if (mode === 'INBOUND') {
-                inFields.classList.remove('hidden');
-                outFields.classList.add('hidden');
-                btnIn.className = "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800";
-                btnOut.className = "flex-1 py-3 text-lg font-bold text-gray-500 bg-gray-50 border-b-4 border-transparent";
-            } else {
-                inFields.classList.add('hidden');
-                outFields.classList.remove('hidden');
-                btnIn.className = "flex-1 py-3 text-lg font-bold text-gray-500 bg-gray-50 border-b-4 border-transparent";
-                btnOut.className = "flex-1 py-3 text-lg font-bold bg-blue-100 text-blue-800 border-b-4 border-blue-800";
-            }
+            document.getElementById('btn-inbound').className = mode === 'INBOUND' ? "flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" : "flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent";
+            document.getElementById('btn-outbound').className = mode === 'OUTBOUND' ? "flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" : "flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent";
+            document.getElementById('btn-return').className = mode === 'RETURN' ? "flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" : "flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent";
             
             resetScanner();
         }
 
         function onScanSuccess(decodedText) {
             document.getElementById('scanned-qr').value = decodedText;
-            document.getElementById('scan-status').innerText = "QR Scanned! Fill details below.";
-            document.getElementById('scan-status').className = "text-center mt-2 font-bold text-green-600";
+            document.getElementById('scan-status').innerText = "✓ QR Scanned Successfully";
+            document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-emerald-600";
             document.getElementById('form-container').classList.remove('hidden');
-            
-            if (html5QrCode) {
-                html5QrCode.pause(true); 
-            }
+            if (html5QrCode) html5QrCode.pause(true);
         }
 
         function resetScanner() {
             document.getElementById('form-container').classList.add('hidden');
-            document.getElementById('scan-status').innerText = "Waiting for scan...";
-            document.getElementById('scan-status').className = "text-center mt-2 font-bold text-blue-600";
-            
+            document.getElementById('scan-status').innerText = "Waiting for scanner...";
+            document.getElementById('scan-status').className = "text-center mt-4 text-sm font-medium text-slate-500";
             if (html5QrCode) {
-                try {
-                    html5QrCode.resume();
-                } catch (e) {
-                    startCamera();
-                }
+                try { html5QrCode.resume(); } catch (e) { startCamera(); }
             }
         }
 
         async function submitData() {
-            const qr_id = document.getElementById('scanned-qr').value;
-            const endpoint = currentMode === 'INBOUND' ? '/api/inbound/' : '/api/outbound/';
-            
-            let payload = { qr_id: qr_id };
+            let endpoint = '';
+            let formData = new FormData();
+            formData.append('qr_id', document.getElementById('scanned-qr').value);
             
             if (currentMode === 'INBOUND') {
-                payload.product_type = document.getElementById('product_type').value;
-                payload.design_work = document.getElementById('design_work').value;
-                payload.weaver_name = document.getElementById('weaver_name').value;
+                endpoint = '/api/inbound/';
+                formData.append('product_type', document.getElementById('product_type').value);
+                formData.append('design_work', document.getElementById('design_work').value);
+                formData.append('weaver_name', document.getElementById('weaver_name').value);
+                const imageFile = document.getElementById('product_image').files[0];
+                if (imageFile) formData.append('product_image', imageFile);
+            } else if (currentMode === 'OUTBOUND') {
+                endpoint = '/api/outbound/';
+                formData.append('pincode', document.getElementById('pincode').value);
+                formData.append('sales_channel', document.getElementById('sales_channel').value);
             } else {
-                payload.pincode = document.getElementById('pincode').value;
-                payload.sales_channel = document.getElementById('sales_channel').value;
+                endpoint = '/api/return/';
             }
 
             try {
                 let response = await fetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: formData // No Content-Type header needed for FormData
                 });
                 
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    let result = await response.json();
-                    if (response.ok) {
-                        alert(result.message);
-                        resetScanner();
-                    } else {
-                        alert("Error: " + result.error);
-                    }
+                let result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    resetScanner();
                 } else {
-                    alert(`Server Error (${response.status}). Please check backend.`);
+                    alert("Notice: " + result.error);
                 }
             } catch (error) {
                 alert("Connection Error. Please check your network.");
@@ -153,19 +140,16 @@
         }
 
         function startCamera() {
-            if (!html5QrCode) {
-                html5QrCode = new Html5Qrcode("reader");
-            }
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" }, 
                 { fps: 10, qrbox: { width: 250, height: 250 } },
                 onScanSuccess
             ).catch(err => {
-                document.getElementById('scan-status').innerText = "Camera permission denied.";
-                document.getElementById('scan-status').className = "text-center mt-2 font-bold text-red-600";
+                document.getElementById('scan-status').innerText = "Camera denied.";
+                document.getElementById('scan-status').className = "text-center mt-4 text-sm font-medium text-red-500";
             });
         }
-
         window.onload = startCamera;
     </script>
 </body>
