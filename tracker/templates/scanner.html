@@ -84,20 +84,38 @@
             resetScanner();
         }
 
-        function onScanSuccess(decodedText) {
+       function onScanSuccess(decodedText) {
             document.getElementById('scanned-qr').value = decodedText;
-            document.getElementById('scan-status').innerText = "✓ QR Scanned Successfully";
-            document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-emerald-600";
-            document.getElementById('form-container').classList.remove('hidden');
-            if (html5QrCode) html5QrCode.pause(true);
+            
+            if (currentMode === 'RETURN') {
+                // Instantly submit for returns, skipping the buggy camera pause entirely
+                document.getElementById('scan-status').innerText = "Processing Return...";
+                document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-blue-600";
+                submitData();
+            } else {
+                // Normal behavior for Inbound/Dispatch
+                document.getElementById('scan-status').innerText = "✓ QR Scanned Successfully";
+                document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-emerald-600";
+                document.getElementById('form-container').classList.remove('hidden');
+                
+                if (html5QrCode) {
+                    html5QrCode.pause(true); 
+                }
+            }
         }
 
         function resetScanner() {
             document.getElementById('form-container').classList.add('hidden');
             document.getElementById('scan-status').innerText = "Waiting for scanner...";
             document.getElementById('scan-status').className = "text-center mt-4 text-sm font-medium text-slate-500";
-            if (html5QrCode) {
-                try { html5QrCode.resume(); } catch (e) { startCamera(); }
+            
+            // Only attempt to resume if we actually paused it (Inbound/Dispatch)
+            if (html5QrCode && currentMode !== 'RETURN') {
+                try {
+                    html5QrCode.resume();
+                } catch (e) {
+                    startCamera();
+                }
             }
         }
 
