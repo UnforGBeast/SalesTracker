@@ -36,10 +36,13 @@ def export_as_csv(self, request, queryset):
 @admin.register(FinishedProduct)
 class FinishedProductAdmin(ModelAdmin):
     # What shows up in the main table
-    list_display = ('id', 'product_type', 'status_badge', 'derived_city', 'date_entered')
-    list_filter = ('status', 'sales_channel', 'product_type', 'derived_state')
+    list_display = ('id', 'product_type','image_thumbnail', 'status_badge', 'derived_city', 'date_entered','return_reason')
+    list_filter = ('status', 'sales_channel', 'product_type', 'derived_state','return_reason')
     search_fields = ('id', 'product_type', 'design_work', 'weaver_name', 'derived_city')
     date_hierarchy = 'date_entered'
+
+    # Made the preview read-only so it renders as an image, not a file upload button
+    readonly_fields = ('id', 'date_entered', 'date_dispatched', 'derived_city', 'derived_state', 'image_preview')
     # How many items per page before pagination
     list_per_page = 50
 
@@ -75,16 +78,27 @@ class FinishedProductAdmin(ModelAdmin):
     # Organizes the detail view into clean sections
     fieldsets = (
         ('Product Identification', {
-            'fields': ('id', 'product_type', 'design_work', 'weaver_name')
+            'fields': ('id', 'product_type', 'design_work','product_image', 'image_preview', 'weaver_name')
         }),
         ('Inventory Status', {
-            'fields': ('status', 'date_entered')
+            'fields': ('status','return_reason', 'date_entered')
         }),
         ('Dispatch Tracking Data', {
             'fields': ('sales_channel', 'date_dispatched', 'pincode', 'derived_city', 'derived_state'),
             'classes': ('collapse',), # This hides the dispatch section under a dropdown if empty
         }),
     )
+    @admin.display(description='Photo')
+    def image_thumbnail(self, obj):
+        if obj.product_image:
+            return format_html('<img src="{}" style="height: 40px; border-radius: 4px;" />', obj.product_image.url)
+        return "-"
+
+    @admin.display(description='Preview')
+    def image_preview(self, obj):
+        if obj.product_image:
+            return format_html('<img src="{}" style="max-height: 300px; border-radius: 8px;" />', obj.product_image.url)
+        return "No image uploaded"
 
     # Custom HTML to create colored status tags
     @admin.display(description='Live Status')

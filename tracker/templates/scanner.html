@@ -57,7 +57,14 @@
             </div>
 
             <div id="return-fields" class="space-y-3 hidden text-center">
-                <p class="text-sm text-slate-600">Scanning barcode automatically processes the return.</p>
+                <select id="return_reason" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm mb-2">
+                    <option value="UNSOLD">Unsold / Stock Swap</option>
+                    <option value="DEFECTIVE">Defective / Damaged</option>
+                    <option value="CANCELED">Customer Canceled</option>
+                    <option value="WRONG_ITEM">Wrong Item Shipped</option>
+                    <option value="OTHER">Other</option>
+                </select>
+                <p class="text-sm text-slate-600">Select a reason above, then scan the barcode to automatically process the return.</p>
             </div>
 
             <button id="submit-btn" onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-6 shadow-sm">
@@ -137,6 +144,7 @@
                 formData.append('sales_channel', document.getElementById('sales_channel').value);
             } else {
                 endpoint = '/api/return/';
+                formData.append('return_reason', document.getElementById('return_reason').value);
             }
 
             try {

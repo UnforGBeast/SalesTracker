@@ -12,6 +12,14 @@ class SalesChannel(models.TextChoices):
     WHOLESALE = 'WHOLESALE', 'Wholesale B2B'
     ONLINE = 'ONLINE', 'Online E-commerce'
 
+RETURN_REASONS = [
+    ('UNSOLD', 'Unsold / Stock Swap'),
+    ('DEFECTIVE', 'Defective / Damaged'),
+    ('CANCELED', 'Customer Canceled'),
+    ('WRONG_ITEM', 'Wrong Item Shipped'),
+    ('OTHER', 'Other'),
+]
+
 class FinishedProduct(models.Model):
     # Allows both standard UUIDs AND custom printed text QR strings
     id = models.CharField(primary_key=True, max_length=100, default=uuid.uuid4, editable=True)
@@ -21,6 +29,7 @@ class FinishedProduct(models.Model):
     design_work = models.CharField(max_length=100, db_index=True, blank=True, null=True)
     weaver_name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
 
+    return_reason = models.CharField(max_length=50, choices=RETURN_REASONS, null=True, blank=True)
     status = models.CharField(max_length=20, choices=InventoryStatus.choices, default=InventoryStatus.IN_STOCK)
     date_entered = models.DateTimeField(default=timezone.now)
     
