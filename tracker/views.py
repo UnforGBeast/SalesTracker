@@ -43,7 +43,13 @@ def compress_image(uploaded_image):
 
 def scanner_ui(request):
     return render(request, 'scanner.html')
-
+def live_catalogue(request):
+    # Fetch only products sitting in the warehouse, newest first
+    available_products = FinishedProduct.objects.filter(
+        status=InventoryStatus.IN_STOCK
+    ).order_by('-date_entered')
+    
+    return render(request, 'catalogue.html', {'products': available_products})
 @csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])
