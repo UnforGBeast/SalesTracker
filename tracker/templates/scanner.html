@@ -26,6 +26,16 @@
             <div id="reader" class="w-full bg-slate-900 rounded-xl overflow-hidden shadow-inner"></div>
             <p id="scan-status" class="text-center mt-4 text-sm font-medium text-slate-500">Waiting for scanner...</p>
         </div>
+        <div id="return-fields" class="px-6 pb-4 hidden text-center">
+            <select id="return_reason" class="w-full p-3.5 bg-white border border-slate-300 rounded-lg text-sm mb-2 shadow-sm font-medium text-slate-700">
+                <option value="UNSOLD">Unsold / Stock Swap</option>
+                <option value="DEFECTIVE">Defective / Damaged</option>
+                <option value="CANCELED">Customer Canceled</option>
+                <option value="WRONG_ITEM">Wrong Item Shipped</option>
+                <option value="OTHER">Other</option>
+            </select>
+            <p class="text-sm text-slate-600 font-medium">Select a reason above, then scan the barcode to process.</p>
+        </div>
 
         <div id="form-container" class="px-6 pb-8 hidden">
             <input type="hidden" id="scanned-qr">
@@ -56,18 +66,7 @@
                 </select>
             </div>
 
-            <div id="return-fields" class="space-y-3 hidden text-center">
-                <select id="return_reason" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm mb-2">
-                    <option value="UNSOLD">Unsold / Stock Swap</option>
-                    <option value="DEFECTIVE">Defective / Damaged</option>
-                    <option value="CANCELED">Customer Canceled</option>
-                    <option value="WRONG_ITEM">Wrong Item Shipped</option>
-                    <option value="OTHER">Other</option>
-                </select>
-                <p class="text-sm text-slate-600">Select a reason above, then scan the barcode to automatically process the return.</p>
-            </div>
-
-            <button id="submit-btn" onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-6 shadow-sm">
+               <button id="submit-btn" onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-6 shadow-sm">
                 Save Record
             </button>
         </div>
