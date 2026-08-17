@@ -137,6 +137,7 @@ def log_outbound(request):
 @permission_classes([])
 def log_return(request):
     qr_id = request.data.get('qr_id')
+    reason = request.data.get('return_reason', 'OTHER')
     if not qr_id:
         return Response({'error': 'Missing QR code'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -146,6 +147,7 @@ def log_return(request):
             return Response({'error': 'Item is already in the warehouse!'}, status=status.HTTP_400_BAD_REQUEST)
             
         product.status = InventoryStatus.RETURNED
+        product.return_reason = reason
         product.save()
         return Response({'message': 'Item marked as RETURNED and placed back in inventory.'})
     except FinishedProduct.DoesNotExist:
