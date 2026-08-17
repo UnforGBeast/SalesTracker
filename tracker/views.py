@@ -46,7 +46,7 @@ def scanner_ui(request):
 def live_catalogue(request):
     # Fetch only products sitting in the warehouse, newest first
     available_products = FinishedProduct.objects.filter(
-        status=InventoryStatus.IN_STOCK
+        status__in=[InventoryStatus.IN_STOCK, InventoryStatus.RETURNED]
     ).order_by('-date_entered')
     
     return render(request, 'catalogue.html', {'products': available_products})
