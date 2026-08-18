@@ -160,3 +160,32 @@ UNFOLD = {
         },
     },
 }
+UNFOLD = {
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": "Business Tools",
+                "separator": True, 
+                "items": [
+                    {
+                        "title": "Financial Dashboard",
+                        "icon": "monitoring",  # Material icon name
+                        "link": "/dashboard/", # The URL path we created earlier
+                    },
+                    {
+                        "title": "Live Catalogue",
+                        "icon": "storefront",
+                        "link": "/catalogue/",
+                    },
+                    {
+                        "title": "Barcode Scanner",
+                        "icon": "qr_code_scanner",
+                        "link": "/scanner/",
+                    },
+                ],
+            },
+        ],
+    },
+}
