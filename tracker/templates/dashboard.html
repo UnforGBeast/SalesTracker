@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Dashboard | Silk O Zari</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased p-6 md:p-12">
+    
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-slate-900 mb-8 tracking-tight">Business Overview</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Capital on Shelves -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-emerald-500 hover:shadow-md transition-shadow">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Capital in Warehouse</p>
+                <h2 class="text-4xl font-bold text-slate-900">₹{{ inventory_value|floatformat:2 }}</h2>
+                <div class="mt-4 flex items-center text-sm font-medium text-emerald-600 bg-emerald-50 inline-block px-3 py-1 rounded-full">
+                    <span>{{ stock_count }} Items In Stock</span>
+                </div>
+            </div>
+
+            <!-- Total Revenue -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-blue-500 hover:shadow-md transition-shadow">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Dispatched Sales</p>
+                <h2 class="text-4xl font-bold text-slate-900">₹{{ total_sales|floatformat:2 }}</h2>
+                <div class="mt-4 flex items-center text-sm font-medium text-blue-600 bg-blue-50 inline-block px-3 py-1 rounded-full">
+                    <span>{{ sales_count }} Items Dispatched</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import requests
 from .models import FinishedProduct, InventoryStatus
+from django.db.models import Sum
 
 # --- NEW IMPORTS FOR COMPRESSION ---
 from PIL import Image
@@ -57,7 +58,8 @@ def live_catalogue(request):
 def log_inbound(request):
     qr_id = request.data.get('qr_id')
     product_type = request.data.get('product_type')
-    
+    raw_price = request.data.get('price')
+    price_value = raw_price if raw_price else 0.00
     if not qr_id or not product_type:
         return Response({'error': 'Missing QR ID or Product Type'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -74,6 +76,7 @@ def log_inbound(request):
             product_type=product_type,
             design_work=request.data.get('design_work', ''),
             weaver_name=request.data.get('weaver_name', ''),
+            price=price_value,
             status=InventoryStatus.IN_STOCK,
             date_entered=timezone.now()
         )
@@ -158,3 +161,21 @@ def log_return(request):
         return Response({'message': 'Item marked as RETURNED and placed back in inventory.'})
     except FinishedProduct.DoesNotExist:
         return Response({'error': 'Item not found in system!'}, status=status.HTTP_404_NOT_FOUND)
+def financial_dashboard(request):
+    # Calculate Capital on Shelves (IN_STOCK)
+    in_stock = FinishedProduct.objects.filter(status=InventoryStatus.IN_STOCK)
+    inventory_value = in_stock.aggregate(Sum('price'))['price__sum'] or 0
+    stock_count = in_stock.count()
+
+    # Calculate Total Revenue (DISPATCHED)
+    dispatched = FinishedProduct.objects.filter(status=InventoryStatus.DISPATCHED)
+    total_sales = dispatched.aggregate(Sum('price'))['price__sum'] or 0
+    sales_count = dispatched.count()
+
+    context = {
+        'inventory_value': inventory_value,
+        'stock_count': stock_count,
+        'total_sales': total_sales,
+        'sales_count': sales_count,
+    }
+    return render(request, 'dashboard.html', context)

@@ -28,7 +28,8 @@ class FinishedProduct(models.Model):
     product_type = models.CharField(max_length=50,db_index=True)
     design_work = models.CharField(max_length=100, db_index=True, blank=True, null=True)
     weaver_name = models.CharField(max_length=100, db_index=True, blank=True, null=True)
-
+ # Inside your FinishedProduct class, add this below your other fields:
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Selling price of the item")
     return_reason = models.CharField(max_length=50, choices=RETURN_REASONS, null=True, blank=True)
     status = models.CharField(max_length=20, choices=InventoryStatus.choices, default=InventoryStatus.IN_STOCK)
     date_entered = models.DateTimeField(default=timezone.now)
