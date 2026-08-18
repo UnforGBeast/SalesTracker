@@ -13,11 +13,17 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file
 load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+BRAND_NAME = os.getenv('BRAND_NAME', 'Zorvia Core')
+BRAND_COLOR = os.getenv('BRAND_COLOR', 'slate')
+CURRENCY_SYMBOL = os.getenv('CURRENCY_SYMBOL', '₹')
+BRAND_LOGO = os.getenv('BRAND_LOGO', '/static/default_logo.png')
 
 
 
@@ -69,6 +75,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'tracker.context_processors.brand_context',
             ],
         },
     },
@@ -142,22 +149,24 @@ MAILERS = {
     },
 }
 UNFOLD = {
-    "SITE_TITLE": "Silk O Zari Inventory Management",
-    "SITE_HEADER": "Silk O Zari Administration",
-    "SITE_SYMBOL": "inventory_2",  # This changes the icon next to the title (Google Material Icon)
-    "COLORS": {
-        "primary": {
-            "50": "#f8fafc",
-            "100": "#f1f5f9",
-            "200": "#e2e8f0",
-            "300": "#cbd5e1",
-            "400": "#94a3b8",
-            "500": "#64748b",
-            "600": "#475569",
-            "700": "#334155",
-            "800": "#1e293b",
-            "900": "#0f172a",
-        },
+    "SITE_ICON": {
+        "light": lambda request: BRAND_LOGO,
+        "dark": lambda request: BRAND_LOGO,
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": "Business Tools",
+                "separator": True,
+                "items": [
+                    {"title": "Financial Dashboard", "icon": "monitoring", "link": "/dashboard/"},
+                    {"title": "Live Catalogue", "icon": "storefront", "link": "/catalogue/"},
+                    {"title": "Barcode Scanner", "icon": "qr_code_scanner", "link": "/scanner/"},
+                ],
+            },
+        ],
     },
 }
 UNFOLD = {

@@ -5,13 +5,17 @@ from .models import FinishedProduct
 import csv
 from django.http import HttpResponse
 from unfold.decorators import action
+import os
 
 
+BRAND_NAME = os.getenv('BRAND_NAME', 'Silk O Zari')
+BRAND_COLOR = os.getenv('BRAND_COLOR', 'slate')
+CURRENCY_SYMBOL = os.getenv('CURRENCY_SYMBOL', '₹')
 
 # Customize Global Admin Headers
-admin.site.site_header = "Silk O Zari Administration"
-admin.site.site_title = "Silk O Zari Portal"
-admin.site.index_title = "Inventory Dashboard"
+admin.site.site_header = BRAND_NAME
+admin.site.site_title = BRAND_NAME + " Portal "
+admin.site.index_title = f"{BRAND_NAME}Inventory Dashboard"
 
 @admin.action(description='Generate Report / Export to CSV')
 def export_as_csv(self, request, queryset):

@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Dashboard</title>
+    <div class="flex items-center gap-3">
+    {% if BRAND_LOGO %}
+        <img src="{{ BRAND_LOGO }}" alt="{{ BRAND_NAME }} Logo" class="h-8 w-auto object-contain">
+    {% endif %}
+    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ BRAND_NAME }}</h1>
+</div>
+    <title>{{ BRAND_NAME }} Scanner Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +18,7 @@
 <body class="bg-slate-50 text-slate-800 antialiased">
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-sm border-x border-slate-200">
         <div class="pt-8 pb-6 px-6 text-center border-b border-slate-100">
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Silk O Zari</h1>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ BRAND_NAME }}</h1>
         </div>
 
         <!-- 3-Way Mode Selector -->
@@ -48,6 +54,7 @@
                     <option value="GHARARA">Gharara</option>
                     <option value="DUPATTA">Dupatta</option>
                     <option value="FABRIC">Fabric</option>
+                    <option value="SHARARA">Sharara</option>
                 </select>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 font-medium">₹</span>
