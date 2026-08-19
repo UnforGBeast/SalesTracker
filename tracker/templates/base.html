@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ BRAND_NAME }} | Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Force Tailwind to generate classes dynamically passed from Django */
+        .dynamic-bg { background-color: var(--brand-color); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased flex h-screen overflow-hidden">
+
+    <!-- 1. TailAdmin Sidebar Style -->
+    <aside class="w-64 bg-{{ BRAND_COLOR }}-900 text-white flex flex-col hidden sm:flex transition-all duration-300 shadow-xl border-r border-{{ BRAND_COLOR }}-800">
+        <div class="h-16 flex items-center px-6 border-b border-{{ BRAND_COLOR }}-800 font-bold text-xl tracking-wider">
+            {{ BRAND_NAME }}
+        </div>
+        <nav class="flex-1 py-4 flex flex-col gap-2 px-4">
+            <!-- Dynamic Active States -->
+            <a href="/dashboard/" class="flex items-center gap-3 px-4 py-2 rounded-md bg-{{ BRAND_COLOR }}-800 text-{{ BRAND_COLOR }}-50 hover:bg-{{ BRAND_COLOR }}-700 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Dashboard
+            </a>
+            <a href="/catalogue/" class="flex items-center gap-3 px-4 py-2 rounded-md text-{{ BRAND_COLOR }}-200 hover:bg-{{ BRAND_COLOR }}-800 hover:text-white transition">
+                <!-- Add Icon --> Live Catalogue
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 2. Main Content Area -->
+    <div class="flex-1 flex flex-col overflow-hidden relative">
+        
+        <!-- TailAdmin Top Header Style -->
+        <header class="h-16 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-6 z-10">
+            <div class="flex items-center gap-4">
+                <button class="sm:hidden text-slate-500 hover:text-{{ BRAND_COLOR }}-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <h2 class="text-xl font-semibold text-slate-800">{% block header_title %}Overview{% endblock %}</h2>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <span class="text-sm font-medium text-slate-500">Admin Account</span>
+                <div class="w-8 h-8 rounded-full bg-{{ BRAND_COLOR }}-100 border border-{{ BRAND_COLOR }}-300 flex items-center justify-center text-{{ BRAND_COLOR }}-700 font-bold">
+                    {{ BRAND_NAME|make_list|first }}
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Page Content injects here -->
+        <main class="flex-1 overflow-y-auto p-6 bg-slate-50">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+</body>
+</html>

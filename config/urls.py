@@ -17,9 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 from django.views.generic import RedirectView
+from tracker.views import inventory_list_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(url='/admin/', permanent=False), name='index'),
-    path('', include('tracker.urls')), # This links your API endpoints
+    path('', RedirectView.as_view(url='/inventory/', permanent=False), name='home'),
+    path('', include('tracker.urls')),
+     path('inventory/', inventory_list_view, name='inventory_list') # This links your API endpoints
 ]

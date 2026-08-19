@@ -8,11 +8,17 @@ import requests
 from .models import FinishedProduct, InventoryStatus
 from django.db.models import Sum
 
+
 # --- NEW IMPORTS FOR COMPRESSION ---
 from PIL import Image
 import io
 import sys
 from django.core.files.uploadedfile import InMemoryUploadedFile
+#links to inventory_list.html and sends the data from the database
+def inventory_list_view(request):
+    # Fetch all products, ordered by newest first
+    products = FinishedProduct.objects.all().order_by('-date_entered')
+    return render(request, 'inventory_list.html', {'products': products})
 
 def compress_image(uploaded_image):
     """ Resizes and compresses an image before saving to disk """
