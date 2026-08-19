@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 BRAND_NAME = os.getenv('BRAND_NAME', 'Zorvia Core')
-BRAND_COLOR = os.getenv('BRAND_COLOR', 'slate')
+BRAND_COLOR = os.getenv('BRAND_COLOR', 'slate').replace("'", "").replace('"', "").strip().lower()
 CURRENCY_SYMBOL = os.getenv('CURRENCY_SYMBOL', '₹')
 BRAND_LOGO = os.getenv('BRAND_LOGO', '/static/default_logo.png')
 
