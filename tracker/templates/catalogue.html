@@ -61,11 +61,18 @@
                     {% if product.weaver_name %}
                         <p class="text-sm text-slate-600"><span class="font-medium">Weaver:</span> {{ product.weaver_name }}</p>
                     {% endif %}
-                </div>
+                </div> <!-- Closes product details div -->
+            </div> <!-- Closes product card div -->
+            {% endfor %} <!-- THIS WAS MISSING -->
+        </div> <!-- Closes grid container div -->
+        
+        {% else %} <!-- THIS WAS MISSING -->
+        
         <!-- Empty State -->
         <div class="text-center py-20">
             <p class="text-slate-500 font-medium">The warehouse is currently empty.</p>
         </div>
+        
         {% endif %}
     </main>
 
