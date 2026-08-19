@@ -7,7 +7,7 @@ from django.utils import timezone
 import requests
 from .models import FinishedProduct, InventoryStatus
 from django.db.models import Sum
-
+from django.db.models import Sum, Q
 
 # --- NEW IMPORTS FOR COMPRESSION ---
 from PIL import Image
@@ -16,24 +16,43 @@ import sys
 from django.core.files.uploadedfile import InMemoryUploadedFile
 #links to inventory_list.html and sends the data from the database
 def inventory_list_view(request):
-    # Fetch all products
+    # 1. Get filter values from the URL
+    status_filter = request.GET.get('status')
+    search_query = request.GET.get('search')
+    
+    # 2. Start with all products
     products = FinishedProduct.objects.all().order_by('-date_entered')
     
-    # Filter for active stock and dispatched stock
-    in_stock = products.filter(status__in=['IN_STOCK', 'RETURNED'])
-    dispatched = products.filter(status='DISPATCHED')
+    # 3. Apply the Status Filter if selected
+    if status_filter:
+        products = products.filter(status=status_filter)
+        
+    # 4. Apply the Search Filter if typed (searches ID, Weaver, or Design)
+    if search_query:
+        products = products.filter(
+            Q(id__icontains=search_query) | 
+            Q(weaver_name__icontains=search_query) | 
+            Q(design_work__icontains=search_query)
+        )
+
+    # 5. Calculate global dashboard metrics (these stay fixed regardless of filters)
+    global_stock = FinishedProduct.objects.all()
+    in_stock = global_stock.filter(status__in=['IN_STOCK', 'RETURNED'])
+    dispatched = global_stock.filter(status='DISPATCHED')
     
-    # Calculate totals (the 'or 0' prevents errors if the database is empty)
     inventory_value = in_stock.aggregate(Sum('price'))['price__sum'] or 0
     total_sales = dispatched.aggregate(Sum('price'))['price__sum'] or 0
     
-    # Package everything up to send to the template
+    # 6. Pass everything to the template
     context = {
         'products': products,
         'inventory_value': inventory_value,
         'stock_count': in_stock.count(),
         'total_sales': total_sales,
         'sales_count': dispatched.count(),
+        # Pass active filters back so the dropdowns stay selected
+        'current_status': status_filter,
+        'search_query': search_query or '',
     }
     
     return render(request, 'inventory_list.html', context)
