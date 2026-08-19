@@ -179,3 +179,14 @@ def financial_dashboard(request):
         'sales_count': sales_count,
     }
     return render(request, 'dashboard.html', context)
+def admin_dashboard_callback(request, context):
+    in_stock = FinishedProduct.objects.filter(status=InventoryStatus.IN_STOCK)
+    dispatched = FinishedProduct.objects.filter(status=InventoryStatus.DISPATCHED)
+
+    context.update({
+        "inventory_value": in_stock.aggregate(Sum('price'))['price__sum'] or 0,
+        "stock_count": in_stock.count(),
+        "total_sales": dispatched.aggregate(Sum('price'))['price__sum'] or 0,
+        "sales_count": dispatched.count(),
+    })
+    return context
