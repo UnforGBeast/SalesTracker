@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 BRAND_NAME = os.getenv('BRAND_NAME', 'Zorvia Core')
-BRAND_COLOR = os.getenv('BRAND_COLOR', 'amber').replace("'", "").replace('"', "").strip().lower()
+
 CURRENCY_SYMBOL = os.getenv('CURRENCY_SYMBOL', '₹')
 BRAND_LOGO = os.getenv('BRAND_LOGO', '/static/default_logo.png')
 
@@ -58,8 +58,9 @@ TAILWIND_COLORS = {
     },
 }
 
+raw_color = os.getenv('BRAND_COLOR', 'slate').replace("'", "").replace('"', "").strip().lower()
+selected_palette = TAILWIND_COLORS.get(raw_color, TAILWIND_COLORS["slate"])
 
-selected_palette = TAILWIND_COLORS.get(BRAND_COLOR, TAILWIND_COLORS["slate"])
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
