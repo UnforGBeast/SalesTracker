@@ -3,6 +3,40 @@
 {% block header_title %}Inventory Management{% endblock %}
 
 {% block content %}
+{% block content %}
+
+<!-- Dynamic Financial Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    
+    <!-- Capital In Warehouse Card -->
+    <div class="bg-white rounded-xl shadow-sm border-t-4 border-t-{{ BRAND_COLOR }}-500 p-6 flex flex-col justify-between transition-transform hover:-translate-y-1 duration-200">
+        <div>
+            <p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Capital in Warehouse</p>
+            <h3 class="text-4xl font-bold text-slate-900 mb-2">{{ CURRENCY_SYMBOL }}{{ inventory_value|floatformat:2 }}</h3>
+        </div>
+        <div class="mt-4">
+            <span class="inline-flex items-center gap-1 text-sm font-medium text-{{ BRAND_COLOR }}-700 bg-{{ BRAND_COLOR }}-50 px-2 py-1 rounded-md">
+                {{ stock_count }} Items In Stock
+            </span>
+        </div>
+    </div>
+    
+    <!-- Total Dispatched Sales Card -->
+    <div class="bg-white rounded-xl shadow-sm border-t-4 border-t-emerald-500 p-6 flex flex-col justify-between transition-transform hover:-translate-y-1 duration-200">
+        <div>
+            <p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Total Dispatched Sales</p>
+            <h3 class="text-4xl font-bold text-slate-900 mb-2">{{ CURRENCY_SYMBOL }}{{ total_sales|floatformat:2 }}</h3>
+        </div>
+        <div class="mt-4">
+            <span class="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">
+                {{ sales_count }} Items Dispatched
+            </span>
+        </div>
+    </div>
+    
+</div>
+
+
 <!-- Table Container -->
 <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
     

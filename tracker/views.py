@@ -16,9 +16,27 @@ import sys
 from django.core.files.uploadedfile import InMemoryUploadedFile
 #links to inventory_list.html and sends the data from the database
 def inventory_list_view(request):
-    # Fetch all products, ordered by newest first
+    # Fetch all products
     products = FinishedProduct.objects.all().order_by('-date_entered')
-    return render(request, 'inventory_list.html', {'products': products})
+    
+    # Filter for active stock and dispatched stock
+    in_stock = products.filter(status__in=['IN_STOCK', 'RETURNED'])
+    dispatched = products.filter(status='DISPATCHED')
+    
+    # Calculate totals (the 'or 0' prevents errors if the database is empty)
+    inventory_value = in_stock.aggregate(Sum('price'))['price__sum'] or 0
+    total_sales = dispatched.aggregate(Sum('price'))['price__sum'] or 0
+    
+    # Package everything up to send to the template
+    context = {
+        'products': products,
+        'inventory_value': inventory_value,
+        'stock_count': in_stock.count(),
+        'total_sales': total_sales,
+        'sales_count': dispatched.count(),
+    }
+    
+    return render(request, 'inventory_list.html', context)
 
 def compress_image(uploaded_image):
     """ Resizes and compresses an image before saving to disk """
