@@ -21,6 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 BRAND_NAME = os.getenv('BRAND_NAME', 'Zorvia Core')
+QR_PREFIX = os.getenv('QR_PREFIX', 'SOZ-').replace("'", "").replace('"', "").strip()
 
 CURRENCY_SYMBOL = os.getenv('CURRENCY_SYMBOL', '₹')
 BRAND_LOGO = os.getenv('BRAND_LOGO', '/static/default_logo.png')

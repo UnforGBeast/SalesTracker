@@ -8,34 +8,59 @@ import requests
 from .models import FinishedProduct, InventoryStatus
 from django.db.models import Sum
 from django.db.models import Sum, Q
-
+import re
 # --- NEW IMPORTS FOR COMPRESSION ---
 from PIL import Image
 import io
 import sys
 from django.core.files.uploadedfile import InMemoryUploadedFile
 #links to inventory_list.html and sends the data from the database
+from django.shortcuts import render
+from django.db.models import Sum, Q
+from .models import FinishedProduct
+
 def inventory_list_view(request):
-    # 1. Get filter values from the URL
+    # 1. Get ALL filter values from the URL
     status_filter = request.GET.get('status')
     search_query = request.GET.get('search')
+    
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    pincode = request.GET.get('pincode')
     
     # 2. Start with all products
     products = FinishedProduct.objects.all().order_by('-date_entered')
     
-    # 3. Apply the Status Filter if selected
+    # 3. Apply Filters sequentially (Chaining)
     if status_filter:
         products = products.filter(status=status_filter)
         
-    # 4. Apply the Search Filter if typed (searches ID, Weaver, or Design)
     if search_query:
         products = products.filter(
             Q(id__icontains=search_query) | 
             Q(weaver_name__icontains=search_query) | 
             Q(design_work__icontains=search_query)
         )
+        
+    # Date Range Filters
+    if start_date:
+        products = products.filter(date_entered__gte=start_date)
+    if end_date:
+        products = products.filter(date_entered__lte=end_date)
+        
+    # Price Range Filters
+    if min_price:
+        products = products.filter(price__gte=min_price)
+    if max_price:
+        products = products.filter(price__lte=max_price)
+        
+    # Pincode Filter (Exact or partial match)
+    if pincode:
+        products = products.filter(pincode__icontains=pincode)
 
-    # 5. Calculate global dashboard metrics (these stay fixed regardless of filters)
+    # 4. Calculate global dashboard metrics (unaffected by filters)
     global_stock = FinishedProduct.objects.all()
     in_stock = global_stock.filter(status__in=['IN_STOCK', 'RETURNED'])
     dispatched = global_stock.filter(status='DISPATCHED')
@@ -43,19 +68,25 @@ def inventory_list_view(request):
     inventory_value = in_stock.aggregate(Sum('price'))['price__sum'] or 0
     total_sales = dispatched.aggregate(Sum('price'))['price__sum'] or 0
     
-    # 6. Pass everything to the template
+    # 5. Pass everything back to the template (so the form keeps its data)
     context = {
         'products': products,
         'inventory_value': inventory_value,
         'stock_count': in_stock.count(),
         'total_sales': total_sales,
         'sales_count': dispatched.count(),
-        # Pass active filters back so the dropdowns stay selected
+        # Form persistence variables
         'current_status': status_filter,
         'search_query': search_query or '',
+        'start_date': start_date or '',
+        'end_date': end_date or '',
+        'min_price': min_price or '',
+        'max_price': max_price or '',
+        'pincode': pincode or '',
     }
     
     return render(request, 'inventory_list.html', context)
+
 
 def compress_image(uploaded_image):
     """ Resizes and compresses an image before saving to disk """
