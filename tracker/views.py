@@ -9,6 +9,7 @@ from .models import FinishedProduct, InventoryStatus
 from django.db.models import Sum
 from django.db.models import Sum, Q
 import re
+import csv
 # --- NEW IMPORTS FOR COMPRESSION ---
 from PIL import Image
 import io
@@ -53,7 +54,7 @@ def inventory_list_view(request):
         products = products.filter(pincode__icontains=pincode)
 
     # ---------------------------------------------------------
-    # NEW: Intercept for CSV Export
+    # NEW: Crash-Proof CSV Export
     # ---------------------------------------------------------
     if request.GET.get('export') == 'csv':
         response = HttpResponse(content_type='text/csv')
@@ -67,15 +68,25 @@ def inventory_list_view(request):
         ])
         
         for obj in products:
+            # Safely get dates if they exist
+            date_in = obj.date_entered.strftime('%Y-%m-%d') if getattr(obj, 'date_entered', None) else ''
+            date_out = obj.date_dispatched.strftime('%Y-%m-%d') if getattr(obj, 'date_dispatched', None) else ''
+            
             writer.writerow([
-                obj.id, obj.product_type, obj.design_work, obj.weaver_name, 
-                obj.price, obj.status, 
-                obj.date_entered.strftime('%Y-%m-%d') if obj.date_entered else '', 
-                obj.date_dispatched.strftime('%Y-%m-%d') if obj.date_dispatched else '', 
-                obj.sales_channel, obj.pincode, obj.derived_city, obj.derived_state
+                getattr(obj, 'id', ''), 
+                getattr(obj, 'product_type', ''), 
+                getattr(obj, 'design_work', ''), 
+                getattr(obj, 'weaver_name', ''), 
+                getattr(obj, 'price', 0.0), 
+                getattr(obj, 'status', ''), 
+                date_in, 
+                date_out, 
+                getattr(obj, 'sales_channel', ''), 
+                getattr(obj, 'pincode', ''), 
+                getattr(obj, 'derived_city', ''), 
+                getattr(obj, 'derived_state', '')
             ])
         return response
-    # ---------------------------------------------------------
 
     # 4. Calculate global dashboard metrics
     global_stock = FinishedProduct.objects.all()
