@@ -19,6 +19,14 @@ from django.shortcuts import render
 from django.db.models import Sum, Q
 from .models import FinishedProduct
 
+def is_valid_qr(qr_id):
+    """
+    Validates QR format: 3-4 letters (Company) - 3 letters (Area) - Alphanumeric (Product+Noise)
+    Example match: SOZ-LKO-TX8492
+    """
+    pattern = r'^[A-Z]{3,4}-[A-Z]{3}-[A-Z0-9]{4,10}$'
+    return re.match(pattern, qr_id) is not None
+
 def inventory_list_view(request):
     # 1. Get ALL filter values from the URL
     status_filter = request.GET.get('status')
@@ -131,7 +139,15 @@ def live_catalogue(request):
 @permission_classes([])
 def log_inbound(request):
     qr_id = request.data.get('qr_id')
-    product_type = request.data.get('product_type')
+    
+    # --- NEW VALIDATION GATEKEEPER ---
+    if qr_id and not is_valid_qr(qr_id):
+        return Response(
+            {'error': 'Invalid QR Format. Unrecognized company or area code.'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    product_type = request.data.get('product_type') 
     raw_price = request.data.get('price')
     price_value = raw_price if raw_price else 0.00
     if not qr_id or not product_type:
@@ -219,8 +235,18 @@ def log_outbound(request):
 @authentication_classes([])
 @permission_classes([])
 def log_return(request):
+
     qr_id = request.data.get('qr_id')
-    reason = request.data.get('return_reason', 'OTHER')
+    
+    # --- NEW VALIDATION GATEKEEPER ---
+    if qr_id and not is_valid_qr(qr_id):
+        return Response(
+            {'error': 'Invalid QR Format. Unrecognized company or area code.'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    product_type = request.data.get('product_type')
+
     if not qr_id:
         return Response({'error': 'Missing QR code'}, status=status.HTTP_400_BAD_REQUEST)
         
