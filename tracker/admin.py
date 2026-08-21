@@ -1,12 +1,12 @@
 from unfold.admin import ModelAdmin
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import FinishedProduct
+
 import csv
 from django.http import HttpResponse
 from unfold.decorators import action
 import os
-
+from .models import FinishedProduct, ResellerToken
 admin.site.index_title = "Inventory Management"
 BRAND_NAME = os.getenv('BRAND_NAME', 'Silk O Zari')
 BRAND_COLOR = os.getenv('BRAND_COLOR', 'slate')
@@ -109,3 +109,11 @@ class FinishedProductAdmin(ModelAdmin):
         elif obj.status == 'DISPATCHED':
             return format_html('<span style="color: white; background-color: #3b82f6; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">DISPATCHED</span>')
         return format_html('<span style="color: white; background-color: #ef4444; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;">{}</span>', obj.status)
+
+@admin.register(ResellerToken)
+class ResellerTokenAdmin(admin.ModelAdmin):
+    list_display = ('reseller_name', 'is_active', 'created_at', 'token')
+    list_filter = ('is_active',)
+    search_fields = ('reseller_name',)
+    # Make the token read-only so it can't be accidentally edited
+    readonly_fields = ('token',)

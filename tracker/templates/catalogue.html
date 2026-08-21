@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Inventory Catalogue | Silk O Zari</title>
+    <title>Live Inventory Catalogue | {{ BRAND_NAME }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Inter', sans-serif; }</style>
@@ -19,7 +19,50 @@
             </span>
         </div>
     </header>
+<div class="mb-8">
+    <h2 class="text-3xl font-bold text-slate-900">Live Catalogue</h2>
+    <p class="text-slate-500">Welcome, {{ reseller_name }}</p>
+</div>
 
+<!-- Filter Bar -->
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-8">
+    <form method="GET" action="{% url 'live_catalogue' %}" class="flex flex-col md:flex-row gap-4 items-center">
+        
+        <!-- CRITICAL: Pass the access token silently -->
+        <input type="hidden" name="token" value="{{ token }}">
+        
+        <!-- Product Type Search -->
+        <div class="w-full md:w-1/4">
+            <input type="text" name="product_type" value="{{ product_type_query }}" placeholder="Product Type (e.g., Banarasi, Silk)..." class="w-full border border-slate-200 rounded-lg text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-{{ BRAND_COLOR }}-500">
+        </div>
+
+        <!-- Weaver Search -->
+        <div class="w-full md:w-1/4">
+            <input type="text" name="weaver" value="{{ weaver_query }}" placeholder="Weaver / Artisan Name..." class="w-full border border-slate-200 rounded-lg text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-{{ BRAND_COLOR }}-500">
+        </div>
+
+        <!-- Price Range -->
+        <div class="flex items-center gap-2 w-full md:w-1/4">
+            <input type="number" name="min_price" value="{{ min_price }}" placeholder="Min ₹" class="w-1/2 border border-slate-200 rounded-lg text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-{{ BRAND_COLOR }}-500">
+            <span class="text-slate-400">-</span>
+            <input type="number" name="max_price" value="{{ max_price }}" placeholder="Max ₹" class="w-1/2 border border-slate-200 rounded-lg text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-{{ BRAND_COLOR }}-500">
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-3 w-full md:w-1/4">
+            <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors w-full md:w-auto">
+                Search
+            </button>
+            
+            <!-- Clear Filters: Needs to explicitly pass the token back to avoid losing access -->
+            {% if product_type_query or weaver_query or min_price or max_price %}
+            <a href="{% url 'live_catalogue' %}?token={{ token }}" class="text-sm font-medium text-rose-600 hover:text-rose-700 transition-colors whitespace-nowrap">
+                Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
     <!-- Product Grid -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {% if products %}

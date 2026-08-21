@@ -19,7 +19,10 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 #links to inventory_list.html and sends the data from the database
 from django.shortcuts import render
 from django.db.models import Sum, Q
-from .models import FinishedProduct
+from .models import FinishedProduct,ResellerToken,InventoryStatus
+from django.http import HttpResponseForbidden
+
+
 
 def inventory_list_view(request):
     # 1. Get ALL filter values from the URL
@@ -155,12 +158,53 @@ def compress_image(uploaded_image):
 def scanner_ui(request):
     return render(request, 'scanner.html')
 def live_catalogue(request):
-    # Fetch only products sitting in the warehouse, newest first
-    available_products = FinishedProduct.objects.filter(
+    # 1. Security Check: Grab and verify the token
+    provided_token = request.GET.get('token')
+    
+    if not provided_token:
+        return HttpResponseForbidden("Access Denied: Missing reseller token.")
+        
+    try:
+        reseller = ResellerToken.objects.get(token=provided_token, is_active=True)
+    except ResellerToken.DoesNotExist:
+        return HttpResponseForbidden("Access Denied: Invalid or revoked link.")
+
+    # 2. Get Filter Parameters
+    product_type = request.GET.get('product_type')
+    weaver = request.GET.get('weaver')
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+
+    # 3. Base Query: Only show items physically sitting in the warehouse
+    products = FinishedProduct.objects.filter(
         status__in=[InventoryStatus.IN_STOCK, InventoryStatus.RETURNED]
     ).order_by('-date_entered')
+
+    # 4. Apply Filters Sequentially
+    if product_type:
+        products = products.filter(product_type__icontains=product_type)
+    if weaver:
+        products = products.filter(weaver_name__icontains=weaver)
+    if min_price:
+        products = products.filter(price__gte=min_price)
+    if max_price:
+        products = products.filter(price__lte=max_price)
+
+    # 5. Package Context
+    context = {
+        'products': products,
+        'reseller_name': reseller.reseller_name,
+        'token': provided_token,  # Must pass token back to the template
+        
+        # Pass filter values back to keep form populated
+        'product_type_query': product_type or '',
+        'weaver_query': weaver or '',
+        'min_price': min_price or '',
+        'max_price': max_price or '',
+    }
     
-    return render(request, 'catalogue.html', {'products': available_products})
+    return render(request, 'catalogue.html', context)
+
 @csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])

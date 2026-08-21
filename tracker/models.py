@@ -40,5 +40,23 @@ class FinishedProduct(models.Model):
     derived_state = models.CharField(max_length=50, null=True, db_index=True, blank=True)
     derived_city = models.CharField(max_length=50, null=True, db_index=True, blank=True)
 
+
+
     def __str__(self):
         return f"{self.product_type} - {self.id}"
+
+class ResellerToken(models.Model):
+    reseller_name = models.CharField(max_length=100, help_text="Name of the reseller company")
+    token = models.CharField(max_length=64, unique=True, blank=True, help_text="Auto-generated secure access token")
+    is_active = models.BooleanField(default=True, help_text="Uncheck this to instantly revoke access")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        # Automatically generate a 32-byte secure token if one doesn't exist
+        if not self.token:
+            self.token = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        status_label = "Active" if self.is_active else "Revoked"
+        return f"{self.reseller_name} ({status_label})"
