@@ -10,6 +10,7 @@ from django.db.models import Sum
 from django.db.models import Sum, Q
 import re
 import csv
+from django.http import HttpResponse
 # --- NEW IMPORTS FOR COMPRESSION ---
 from PIL import Image
 import io
@@ -264,7 +265,7 @@ def log_outbound(request):
 def log_return(request):
 
     qr_id = request.data.get('qr_id')
-    
+    reason = request.data.get('return_reason', 'OTHER')
     # --- NEW VALIDATION GATEKEEPER ---
     if qr_id and not is_valid_qr(qr_id):
         return Response(
