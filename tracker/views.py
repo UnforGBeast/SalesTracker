@@ -19,19 +19,10 @@ from django.shortcuts import render
 from django.db.models import Sum, Q
 from .models import FinishedProduct
 
-def is_valid_qr(qr_id):
-    """
-    Validates QR format: 3-4 letters (Company) - 3 letters (Area) - Alphanumeric (Product+Noise)
-    Example match: SOZ-LKO-TX8492
-    """
-    pattern = r'^[A-Z]{3,4}-[A-Z]{3}-[A-Z0-9]{4,10}$'
-    return re.match(pattern, qr_id) is not None
-
 def inventory_list_view(request):
     # 1. Get ALL filter values from the URL
     status_filter = request.GET.get('status')
     search_query = request.GET.get('search')
-    
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     min_price = request.GET.get('min_price')
@@ -41,34 +32,52 @@ def inventory_list_view(request):
     # 2. Start with all products
     products = FinishedProduct.objects.all().order_by('-date_entered')
     
-    # 3. Apply Filters sequentially (Chaining)
+    # 3. Apply Filters sequentially
     if status_filter:
         products = products.filter(status=status_filter)
-        
     if search_query:
         products = products.filter(
             Q(id__icontains=search_query) | 
             Q(weaver_name__icontains=search_query) | 
             Q(design_work__icontains=search_query)
         )
-        
-    # Date Range Filters
     if start_date:
         products = products.filter(date_entered__gte=start_date)
     if end_date:
         products = products.filter(date_entered__lte=end_date)
-        
-    # Price Range Filters
     if min_price:
         products = products.filter(price__gte=min_price)
     if max_price:
         products = products.filter(price__lte=max_price)
-        
-    # Pincode Filter (Exact or partial match)
     if pincode:
         products = products.filter(pincode__icontains=pincode)
 
-    # 4. Calculate global dashboard metrics (unaffected by filters)
+    # ---------------------------------------------------------
+    # NEW: Intercept for CSV Export
+    # ---------------------------------------------------------
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="inventory_report.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'Barcode ID', 'Product Type', 'Design Work', 'Weaver', 
+            'Price', 'Current Status', 'Date Entered', 'Date Dispatched', 
+            'Sales Channel', 'Destination Pincode', 'Destination City', 'Destination State'
+        ])
+        
+        for obj in products:
+            writer.writerow([
+                obj.id, obj.product_type, obj.design_work, obj.weaver_name, 
+                obj.price, obj.status, 
+                obj.date_entered.strftime('%Y-%m-%d') if obj.date_entered else '', 
+                obj.date_dispatched.strftime('%Y-%m-%d') if obj.date_dispatched else '', 
+                obj.sales_channel, obj.pincode, obj.derived_city, obj.derived_state
+            ])
+        return response
+    # ---------------------------------------------------------
+
+    # 4. Calculate global dashboard metrics
     global_stock = FinishedProduct.objects.all()
     in_stock = global_stock.filter(status__in=['IN_STOCK', 'RETURNED'])
     dispatched = global_stock.filter(status='DISPATCHED')
@@ -76,14 +85,13 @@ def inventory_list_view(request):
     inventory_value = in_stock.aggregate(Sum('price'))['price__sum'] or 0
     total_sales = dispatched.aggregate(Sum('price'))['price__sum'] or 0
     
-    # 5. Pass everything back to the template (so the form keeps its data)
+    # 5. Pass everything back to the template
     context = {
         'products': products,
         'inventory_value': inventory_value,
         'stock_count': in_stock.count(),
         'total_sales': total_sales,
         'sales_count': dispatched.count(),
-        # Form persistence variables
         'current_status': status_filter,
         'search_query': search_query or '',
         'start_date': start_date or '',
@@ -94,6 +102,14 @@ def inventory_list_view(request):
     }
     
     return render(request, 'inventory_list.html', context)
+
+def is_valid_qr(qr_id):
+    """
+    Validates QR format: 3-4 letters (Company) - 3 letters (Area) - Alphanumeric (Product+Noise)
+    Example match: SOZ-LKO-TX8492
+    """
+    pattern = r'^[A-Z]{3,4}-[A-Z]{3}-[A-Z0-9]{4,10}$'
+    return re.match(pattern, qr_id) is not None
 
 
 def compress_image(uploaded_image):
