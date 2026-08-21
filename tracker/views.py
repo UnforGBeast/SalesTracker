@@ -158,9 +158,8 @@ def compress_image(uploaded_image):
 def scanner_ui(request):
     return render(request, 'scanner.html')
 def live_catalogue(request):
-    # 1. Security Check: Grab and verify the token
+    # 1. Security Check
     provided_token = request.GET.get('token')
-    
     if not provided_token:
         return HttpResponseForbidden("Access Denied: Missing reseller token.")
         
@@ -169,18 +168,28 @@ def live_catalogue(request):
     except ResellerToken.DoesNotExist:
         return HttpResponseForbidden("Access Denied: Invalid or revoked link.")
 
-    # 2. Get Filter Parameters
+    # 2. Get Filter Parameters (Including Search)
+    search_query = request.GET.get('search')
     product_type = request.GET.get('product_type')
     weaver = request.GET.get('weaver')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
 
-    # 3. Base Query: Only show items physically sitting in the warehouse
+    # 3. Base Query
     products = FinishedProduct.objects.filter(
         status__in=[InventoryStatus.IN_STOCK, InventoryStatus.RETURNED]
     ).order_by('-date_entered')
 
-    # 4. Apply Filters Sequentially
+    # 4. Apply Global Keyword Search
+    if search_query:
+        products = products.filter(
+            Q(id__icontains=search_query) | 
+            Q(weaver_name__icontains=search_query) | 
+            Q(design_work__icontains=search_query) |
+            Q(product_type__icontains=search_query)
+        )
+
+    # 5. Apply Specific Filters
     if product_type:
         products = products.filter(product_type__icontains=product_type)
     if weaver:
@@ -190,13 +199,11 @@ def live_catalogue(request):
     if max_price:
         products = products.filter(price__lte=max_price)
 
-    # 5. Package Context
     context = {
         'products': products,
         'reseller_name': reseller.reseller_name,
-        'token': provided_token,  # Must pass token back to the template
-        
-        # Pass filter values back to keep form populated
+        'token': provided_token,
+        'search_query': search_query or '',
         'product_type_query': product_type or '',
         'weaver_query': weaver or '',
         'min_price': min_price or '',

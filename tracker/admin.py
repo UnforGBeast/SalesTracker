@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from unfold.decorators import action
 import os
 from .models import FinishedProduct, ResellerToken
+
 admin.site.index_title = "Inventory Management"
 BRAND_NAME = os.getenv('BRAND_NAME', 'Silk O Zari')
 BRAND_COLOR = os.getenv('BRAND_COLOR', 'slate')
@@ -39,7 +40,8 @@ class FinishedProductAdmin(ModelAdmin):
     # What shows up in the main table
     list_display = ('id', 'product_type','image_thumbnail', 'status_badge', 'derived_city', 'date_entered','return_reason')
     list_filter = ('status', 'sales_channel', 'product_type', 'derived_state','return_reason')
-    search_fields = ('id', 'product_type', 'design_work', 'weaver_name', 'derived_city')
+    search_fields = ('id', 'product_type', 'weaver_name', 'design_work', 'pincode','derived_city')
+    
     date_hierarchy = 'date_entered'
 
     # Made the preview read-only so it renders as an image, not a file upload button
