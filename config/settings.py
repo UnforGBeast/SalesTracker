@@ -71,6 +71,15 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 # SECURITY WARNING: don't run with debug turned on in production!
 
+# Grab the raw string from .env
+raw_hosts = os.environ.get('ALLOWED_HOSTS', '')
+
+# Split by comma, strip spaces/quotes, and ignore empty strings
+ALLOWED_HOSTS = [host.strip().replace('"', '').replace("'", "") for host in raw_hosts.split(',') if host.strip()]
+
+# Failsafe: If the .env is totally empty, at least allow localhost
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 
