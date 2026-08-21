@@ -1,6 +1,8 @@
 import uuid
 from django.db import models
 from django.utils import timezone
+import secrets
+
 
 class InventoryStatus(models.TextChoices):
     IN_STOCK = 'IN_STOCK', 'In Stock'
