@@ -82,11 +82,12 @@
                 </select>
             </div>
             <!-- Bulk Mode Controls -->
-            <div class="flex items-center gap-2 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <input type="checkbox" id="bulkMode" class="w-5 h-5 text-slate-800 border-slate-300 rounded focus:ring-slate-800 cursor-pointer">
-                <label for="bulkMode" class="text-sm font-semibold text-slate-700 cursor-pointer">
-                Bulk Scan Mode <span class="font-normal text-slate-500">(Retain product details & image for next scan)</span>
-                </label>
+            <div id="bulk-mode-container" class="flex items-center gap-2 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+    <input type="checkbox" id="bulkMode" class="w-5 h-5 text-slate-800 border-slate-300 rounded focus:ring-slate-800 cursor-pointer">
+    <label for="bulkMode" class="text-sm font-semibold text-slate-700 cursor-pointer">
+        Bulk Scan Mode <span class="font-normal text-slate-500">(Retain product details & image)</span>
+    </label>
+</div>
             </div>
                 <!-- Hidden field to hold the image path -->
                 <input type="hidden" id="reusedImagePath" name="reused_image_path" value="">
@@ -107,6 +108,8 @@
             document.getElementById('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
             document.getElementById('return-fields').classList.toggle('hidden', mode !== 'RETURN');
             
+            // NEW: Hide the Bulk toggle if not on INBOUND
+            document.getElementById('bulk-mode-container').classList.toggle('hidden', mode !== 'INBOUND');
             // Hide submit button entirely during return mode since it auto-submits
             document.getElementById('submit-btn').classList.toggle('hidden', mode === 'RETURN');
             
@@ -241,14 +244,29 @@ async function submitData() {
                 resetScanner();
             }
         } else {
+            // SERVER REJECTED SCAN (e.g., Duplicate item)
             alert("Notice: " + (result.error || result.detail || "Server Rejected Scan"));
-            if (!isBulkMode) resetScanner();
+            
+            if (currentMode === 'INBOUND' && isBulkMode) {
+                // BULK OVERRIDE: Show red warning, clear the bad QR, and immediately resume camera
+                const statusEl = document.getElementById('scan-status');
+                statusEl.innerText = "⚠ Skipped: " + (result.error || "Item rejected");
+                statusEl.className = "text-center mt-4 text-sm font-semibold text-rose-600";
+                
+                document.getElementById('scanned-qr').value = '';
+                if (html5QrCode && html5QrCode.getState() === 3) html5QrCode.resume();
+            } else {
+                // NORMAL MODE: Full reset
+                resetScanner();
+            }
         }
     } catch (error) {
-        alert("Fatal JS Error: " + error.message);
+        console.error("Fatal JS Error: ", error);
+        alert("Fatal Error. Check console logs.");
         resetScanner();
     }
 }
+
 
        
         function startCamera() {
