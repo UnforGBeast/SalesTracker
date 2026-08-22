@@ -203,27 +203,32 @@ async function submitData() {
             body: formData
         });
         
+        // 1. Check if the server returned HTML (like a 500 Crash or 404 Not Found)
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") === -1) {
+            const textError = await response.text();
+            console.error("HTML Error received:", textError);
+            alert(`Server returned an HTML error (Status ${response.status}). Check terminal logs!`);
+            resetScanner();
+            return;
+        }
+
         let result = await response.json();
         
         if (response.ok) {
-            // Audio feedback for calm, headless scanning
             document.getElementById('beepSound').play().catch(()=>{});
 
             if (currentMode === 'INBOUND' && isBulkMode) {
-                // BULK MODE OVERRIDE: Keep form open, lock image, resume camera
                 const statusEl = document.getElementById('scan-status');
                 statusEl.innerText = "✓ " + result.message;
                 statusEl.className = "text-center mt-4 text-sm font-semibold text-emerald-600";
                 
                 document.getElementById('reusedImagePath').value = result.saved_image_path || reusedPath;
                 document.getElementById('scanned-qr').value = '';
-                document.getElementById('product_image').disabled = true; // Visually lock the file input
+                document.getElementById('product_image').disabled = true; 
                 
-                if (html5QrCode && html5QrCode.getState() === 3) {
-                    html5QrCode.resume();
-                }
+                if (html5QrCode && html5QrCode.getState() === 3) html5QrCode.resume();
             } else {
-                // NORMAL MODE
                 alert(result.message);
                 resetScanner();
             }
@@ -232,7 +237,7 @@ async function submitData() {
             if (!isBulkMode) resetScanner();
         }
     } catch (error) {
-        alert("Connection Error. Please check your network.");
+        alert("Fatal JS Error: " + error.message);
         resetScanner();
     }
 }
