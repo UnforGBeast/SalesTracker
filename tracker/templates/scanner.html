@@ -169,19 +169,28 @@ function resetScanner() {
 async function submitData() {
     let endpoint = '';
     let formData = new FormData();
-    formData.append('qr_id', document.getElementById('scanned-qr').value);
+    let reusedPath = ''; // FIX: Declared at the top so the whole function can see it
+    
+    const qrValue = document.getElementById('scanned-qr').value;
+    if (!qrValue) {
+        alert("No QR code detected!");
+        resetScanner();
+        return;
+    }
+    
+    formData.append('qr_id', qrValue);
     
     const isBulkMode = document.getElementById('bulkMode') ? document.getElementById('bulkMode').checked : false;
 
+    // Route matching your urls.py exactly
     if (currentMode === 'INBOUND') {
-        endpoint = '/log_inbound/'; // Note: Ensure this matches your urls.py exactly
+        endpoint = '/api/inbound/'; 
         formData.append('product_type', document.getElementById('product_type').value);
         formData.append('design_work', document.getElementById('design_work').value);
         formData.append('price', document.getElementById('price').value);
         formData.append('weaver_name', document.getElementById('weaver_name').value);
         
-        // Image Routing Logic
-        const reusedPath = document.getElementById('reusedImagePath').value;
+        reusedPath = document.getElementById('reusedImagePath').value;
         if (reusedPath) {
             formData.append('reused_image_path', reusedPath);
         } else {
@@ -189,11 +198,11 @@ async function submitData() {
             if (imageFile) formData.append('product_image', imageFile);
         }
     } else if (currentMode === 'OUTBOUND') {
-        endpoint = '/log_outbound/';
+        endpoint = '/api/outbound/';
         formData.append('pincode', document.getElementById('pincode').value);
         formData.append('sales_channel', document.getElementById('sales_channel').value);
     } else {
-        endpoint = '/log_return/';
+        endpoint = '/api/return/';
         formData.append('return_reason', document.getElementById('return_reason').value);
     }
 
@@ -203,12 +212,11 @@ async function submitData() {
             body: formData
         });
         
-        // 1. Check if the server returned HTML (like a 500 Crash or 404 Not Found)
+        // UNMASK THE ERROR: Check if Django threw an HTML crash page (500 or 404)
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") === -1) {
-            const textError = await response.text();
-            console.error("HTML Error received:", textError);
-            alert(`Server returned an HTML error (Status ${response.status}). Check terminal logs!`);
+            console.error("Server crashed and returned HTML instead of JSON.");
+            alert(`Server Error (Status ${response.status}). Check Gunicorn logs!`);
             resetScanner();
             return;
         }
@@ -233,7 +241,7 @@ async function submitData() {
                 resetScanner();
             }
         } else {
-            alert("Notice: " + (result.error || result.detail || "Server Error"));
+            alert("Notice: " + (result.error || result.detail || "Server Rejected Scan"));
             if (!isBulkMode) resetScanner();
         }
     } catch (error) {
