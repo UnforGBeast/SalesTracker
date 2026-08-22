@@ -219,7 +219,7 @@ def live_catalogue(request):
 def log_inbound(request):
     qr_id = request.data.get('qr_id')
     
-    # --- NEW VALIDATION GATEKEEPER ---
+    # Validation gatekeeper
     if qr_id and not is_valid_qr(qr_id):
         return Response(
             {'error': 'Invalid QR Format. Unrecognized company or area code.'}, 
@@ -229,6 +229,10 @@ def log_inbound(request):
     product_type = request.data.get('product_type') 
     raw_price = request.data.get('price')
     price_value = raw_price if raw_price else 0.00
+    
+    # NEW: Capture the reused image path from bulk mode
+    reused_image_path = request.data.get('reused_image_path')
+    
     if not qr_id or not product_type:
         return Response({'error': 'Missing QR ID or Product Type'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -250,16 +254,26 @@ def log_inbound(request):
             date_entered=timezone.now()
         )
         
-        # --- COMPRESS BEFORE SAVING ---
-        if 'product_image' in request.FILES:
+        saved_path = ""
+        
+        # --- NEW: IMAGE HANDLING LOGIC ---
+        if reused_image_path:
+            product.product_image.name = reused_image_path
+            product.save()
+            saved_path = reused_image_path
+        elif 'product_image' in request.FILES:
             raw_image = request.FILES['product_image']
             product.product_image = compress_image(raw_image)
             product.save()
+            saved_path = product.product_image.name
             
-        return Response({'message': 'Item and image logged successfully!'})
+        return Response({
+            'message': f'Item {qr_id} logged successfully!',
+            'saved_image_path': saved_path
+        })
     except Exception as e:
         return Response({'error': f"Database Error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
+    
 @csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])

@@ -10,6 +10,11 @@
     <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ BRAND_NAME }}</h1>
 </div>
     <title>{{ BRAND_NAME }} Scanner Dashboard</title>
+    <!-- HTML5 QR Code Scanner Library -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<!-- Subtle scanning beep sound -->
+<audio id="beepSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -76,6 +81,15 @@
                     <option value="ONLINE">Online E-commerce</option>
                 </select>
             </div>
+            <!-- Bulk Mode Controls -->
+            <div class="flex items-center gap-2 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <input type="checkbox" id="bulkMode" class="w-5 h-5 text-slate-800 border-slate-300 rounded focus:ring-slate-800 cursor-pointer">
+                <label for="bulkMode" class="text-sm font-semibold text-slate-700 cursor-pointer">
+                Bulk Scan Mode <span class="font-normal text-slate-500">(Retain product details & image for next scan)</span>
+                </label>
+            </div>
+                <!-- Hidden field to hold the image path -->
+                <input type="hidden" id="reusedImagePath" name="reused_image_path" value="">
 
                <button id="submit-btn" onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-6 shadow-sm">
                 Save Record
@@ -103,82 +117,127 @@
             resetScanner();
         }
 
-        function onScanSuccess(decodedText) {
-            document.getElementById('scanned-qr').value = decodedText;
-            
-            // Always pause the camera immediately upon reading a code to prevent spamming
-            if (html5QrCode) {
-                html5QrCode.pause(true);
-            }
+ function onScanSuccess(decodedText) {
+    document.getElementById('scanned-qr').value = decodedText;
+    
+    // Always pause the camera immediately upon reading a code
+    if (html5QrCode) {
+        html5QrCode.pause(true);
+    }
 
-            if (currentMode === 'RETURN') {
-                document.getElementById('scan-status').innerText = "Processing Return...";
-                document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-blue-600";
-                submitData();
-            } else {
-                document.getElementById('scan-status').innerText = "✓ QR Scanned Successfully";
-                document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-emerald-600";
-                document.getElementById('form-container').classList.remove('hidden');
-            }
+    const isBulkMode = document.getElementById('bulkMode') ? document.getElementById('bulkMode').checked : false;
+    const hasReusedImage = document.getElementById('reusedImagePath').value !== "";
+
+    if (currentMode === 'RETURN') {
+        document.getElementById('scan-status').innerText = "Processing Return...";
+        document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-blue-600";
+        submitData();
+    } 
+    else if (currentMode === 'INBOUND' && isBulkMode && hasReusedImage) {
+        // ACTIVE BULK LOOP: Auto-submit without waiting for the button tap!
+        document.getElementById('scan-status').innerText = `Logging Bulk Item: ${decodedText}...`;
+        document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-blue-600";
+        submitData();
+    } 
+    else {
+        // NORMAL INBOUND (First item in the batch)
+        document.getElementById('scan-status').innerText = "✓ QR Scanned Successfully";
+        document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-emerald-600";
+        document.getElementById('form-container').classList.remove('hidden');
+    }
+}
+
+function resetScanner() {
+    document.getElementById('form-container').classList.add('hidden');
+    document.getElementById('scan-status').innerText = "Waiting for scanner...";
+    document.getElementById('scan-status').className = "text-center mt-4 text-sm font-medium text-slate-500";
+    
+    // Clear bulk mode locks
+    document.getElementById('reusedImagePath').value = '';
+    document.getElementById('product_image').disabled = false;
+    document.getElementById('bulkMode').checked = false;
+    
+    if (html5QrCode) {
+        try {
+            if (html5QrCode.getState() === 3) html5QrCode.resume();
+        } catch (e) {
+            startCamera();
         }
+    }
+}
 
-        function resetScanner() {
-            document.getElementById('form-container').classList.add('hidden');
-            document.getElementById('scan-status').innerText = "Waiting for scanner...";
-            document.getElementById('scan-status').className = "text-center mt-4 text-sm font-medium text-slate-500";
-            
-            if (html5QrCode) {
-                try {
+async function submitData() {
+    let endpoint = '';
+    let formData = new FormData();
+    formData.append('qr_id', document.getElementById('scanned-qr').value);
+    
+    const isBulkMode = document.getElementById('bulkMode') ? document.getElementById('bulkMode').checked : false;
+
+    if (currentMode === 'INBOUND') {
+        endpoint = '/log_inbound/'; // Note: Ensure this matches your urls.py exactly
+        formData.append('product_type', document.getElementById('product_type').value);
+        formData.append('design_work', document.getElementById('design_work').value);
+        formData.append('price', document.getElementById('price').value);
+        formData.append('weaver_name', document.getElementById('weaver_name').value);
+        
+        // Image Routing Logic
+        const reusedPath = document.getElementById('reusedImagePath').value;
+        if (reusedPath) {
+            formData.append('reused_image_path', reusedPath);
+        } else {
+            const imageFile = document.getElementById('product_image').files[0];
+            if (imageFile) formData.append('product_image', imageFile);
+        }
+    } else if (currentMode === 'OUTBOUND') {
+        endpoint = '/log_outbound/';
+        formData.append('pincode', document.getElementById('pincode').value);
+        formData.append('sales_channel', document.getElementById('sales_channel').value);
+    } else {
+        endpoint = '/log_return/';
+        formData.append('return_reason', document.getElementById('return_reason').value);
+    }
+
+    try {
+        let response = await fetch(endpoint, {
+            method: 'POST',
+            body: formData
+        });
+        
+        let result = await response.json();
+        
+        if (response.ok) {
+            // Audio feedback for calm, headless scanning
+            document.getElementById('beepSound').play().catch(()=>{});
+
+            if (currentMode === 'INBOUND' && isBulkMode) {
+                // BULK MODE OVERRIDE: Keep form open, lock image, resume camera
+                const statusEl = document.getElementById('scan-status');
+                statusEl.innerText = "✓ " + result.message;
+                statusEl.className = "text-center mt-4 text-sm font-semibold text-emerald-600";
+                
+                document.getElementById('reusedImagePath').value = result.saved_image_path || reusedPath;
+                document.getElementById('scanned-qr').value = '';
+                document.getElementById('product_image').disabled = true; // Visually lock the file input
+                
+                if (html5QrCode && html5QrCode.getState() === 3) {
                     html5QrCode.resume();
-                } catch (e) {
-                    startCamera();
                 }
-            }
-        }
-
-        async function submitData() {
-            let endpoint = '';
-            let formData = new FormData();
-            formData.append('qr_id', document.getElementById('scanned-qr').value);
-            
-            if (currentMode === 'INBOUND') {
-                endpoint = '/api/inbound/';
-                formData.append('product_type', document.getElementById('product_type').value);
-                formData.append('design_work', document.getElementById('design_work').value);
-                formData.append('price', document.getElementById('price').value);
-                formData.append('weaver_name', document.getElementById('weaver_name').value);
-                
-                const imageFile = document.getElementById('product_image').files[0];
-                if (imageFile) formData.append('product_image', imageFile);
-            } else if (currentMode === 'OUTBOUND') {
-                endpoint = '/api/outbound/';
-                formData.append('pincode', document.getElementById('pincode').value);
-                formData.append('sales_channel', document.getElementById('sales_channel').value);
             } else {
-                endpoint = '/api/return/';
-                formData.append('return_reason', document.getElementById('return_reason').value);
-            }
-
-            try {
-                let response = await fetch(endpoint, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                let result = await response.json();
-                if (response.ok) {
-                    alert(result.message);
-                    resetScanner();
-                } else {
-                    alert("Notice: " + (result.error || result.detail || "Server Error"));
-                    resetScanner();
-                }
-            } catch (error) {
-                alert("Connection Error. Please check your network.");
+                // NORMAL MODE
+                alert(result.message);
                 resetScanner();
             }
+        } else {
+            alert("Notice: " + (result.error || result.detail || "Server Error"));
+            if (!isBulkMode) resetScanner();
         }
+    } catch (error) {
+        alert("Connection Error. Please check your network.");
+        resetScanner();
+    }
+}
 
+       
         function startCamera() {
             if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
@@ -192,5 +251,6 @@
         }
         window.onload = startCamera;
     </script>
+   
 </body>
 </html>
