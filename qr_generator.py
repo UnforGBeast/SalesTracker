@@ -39,4 +39,4 @@ def create_batch_qrs(product_prefix="TX", batch_size=10):
 
 if __name__ == "__main__":
     # Generate 5 sample tags 
-    create_batch_qrs(product_prefix="TX", batch_size=5)
+    create_batch_qrs(product_prefix="TX", batch_size=30)
