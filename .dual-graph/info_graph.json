@@ -1,0 +1,1364 @@
+{
+  "root": "D:\\VS\\Python\\Sales Tracker and Analysis",
+  "node_count": 49,
+  "edge_count": 89,
+  "file_count": 22,
+  "symbol_count": 27,
+  "nodes": [
+    {
+      "id": "appflow.md",
+      "kind": "file",
+      "path": "appflow.md",
+      "ext": ".md",
+      "size": 839,
+      "keywords": [],
+      "content": "Inbound Bulk Operations: Staff utilize smartphone cameras to rapidly scan QR codes; the system compresses a single reference image and links it to multiple database records to radically minimize server storage.\n\nError Recovery: Duplicate scans in continuous bulk mode trigger non-blocking visual alerts, instantly waking the camera for the next item without dropping session data.\n\nDispatch Tracking: Outbound scans capture destination pincodes, automatically resolving regional geographic data via external India Post APIs.\n\nReturn Pipeline: Defective or unsold items are seamlessly scanned back into active inventory alongside standardized reason codes.\n\nExternal Browsing: Resellers utilize secure magic links to browse available stock, filtering via a single Omnibar that queries barcodes, weavers, and textiles simultaneously.",
+      "summary": "Inbound Bulk Operations: Staff utilize smartphone cameras to rapidly scan QR codes; the system compresses a single refer.",
+      "file_hash": "c759c92a"
+    },
+    {
+      "id": "manage.py",
+      "kind": "file",
+      "path": "manage.py",
+      "ext": ".py",
+      "size": 684,
+      "keywords": [
+        "main"
+      ],
+      "content": "#!/usr/bin/env python\n\"\"\"Django's command-line utility for administrative tasks.\"\"\"\nimport os\nimport sys\n\n\ndef main():\n    \"\"\"Run administrative tasks.\"\"\"\n    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')\n    try:\n        from django.core.management import execute_from_command_line\n    except ImportError as exc:\n        raise ImportError(\n            \"Couldn't import Django. Are you sure it's installed and \"\n            \"available on your PYTHONPATH environment variable? Did you \"\n            \"forget to activate a virtual environment?\"\n        ) from exc\n    execute_from_command_line(sys.argv)\n\n\nif __name__ == '__main__':\n    main()\n",
+      "summary": "!/usr/bin/env python. Contains 1 function: main.",
+      "file_hash": "09ce28f2"
+    },
+    {
+      "id": "manage.py::main",
+      "kind": "symbol",
+      "path": "manage.py",
+      "ext": ".py",
+      "size": 16,
+      "keywords": [
+        "main"
+      ],
+      "symbol_type": "use_case",
+      "name": "main",
+      "line_start": 6,
+      "line_end": 21,
+      "body_hash": "83d3b469",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "overview.md",
+      "kind": "file",
+      "path": "overview.md",
+      "ext": ".md",
+      "size": 497,
+      "keywords": [],
+      "content": "This is a specialized B2B Django-based inventory management platform engineered for Banarasi textile distribution. Deployed on AWS via Nginx and Gunicorn, it enforces strict network segregation. Internal warehouse operations are secured behind a Tailscale VPN, while external resellers access public-facing, tokenized catalogues. The interface follows a minimalist \"Calm-Tech\" philosophy, utilizing headless scanning and audio cues to reduce cognitive load during high-volume warehouse operations.",
+      "summary": "This is a specialized B2B Django-based inventory management platform engineered for Banarasi textile distribution. Deplo.",
+      "file_hash": "85c79655"
+    },
+    {
+      "id": "PRD.md",
+      "kind": "file",
+      "path": "PRD.md",
+      "ext": ".md",
+      "size": 710,
+      "keywords": [],
+      "content": "Tech Stack: Django backend, HTML/TailwindCSS frontend, asynchronous JS Fetch API, and the html5-qrcode library.\n\nSecurity Architecture: Dynamic environment parsing for VPN IPs, CSRF exemptions for strict API endpoints, and active database validation for reseller tokens.\n\nData Models: FinishedProduct tracks lifecycle statuses (In Stock, Dispatched, Returned) and geographic routing, while ResellerToken dictates external visibility.\n\nPerformance Optimization: Aggressive Nginx caching for immutable media assets (365 days) alongside dynamic storage routing to prevent duplicate image uploads.\n\nAdmin Panel: Unfold-powered dashboard calculating real-time inventory capital and total dispatched revenue.",
+      "summary": "Tech Stack: Django backend, HTML/TailwindCSS frontend, asynchronous JS Fetch API, and the html5-qrcode library.",
+      "file_hash": "d6a6137e"
+    },
+    {
+      "id": "qr_generator.py",
+      "kind": "file",
+      "path": "qr_generator.py",
+      "ext": ".py",
+      "size": 1486,
+      "keywords": [
+        "generate_noise",
+        "generate",
+        "noise",
+        "create_batch_qrs",
+        "create",
+        "batch",
+        "qrs"
+      ],
+      "content": "import qrcode\nimport random\nimport string\nimport os\nfrom dotenv import load_dotenv\n\n# Load environment variables\nload_dotenv()\n\n# Dynamically fetch the codes, stripping away any accidental quotes\nCOMPANY_CODE = os.getenv('COMPANY_CODE', 'ZOR').replace(\"'\", \"\").replace('\"', \"\").strip()\nAREA_CODE = os.getenv('AREA_CODE', 'LKO').replace(\"'\", \"\").replace('\"', \"\").strip()\n\ndef generate_noise(length=4):\n    \"\"\"Generates random alphanumeric noise.\"\"\"\n    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))\n\ndef create_batch_qrs(product_prefix=\"TX\", batch_size=10):\n    # Create the output directory\n    os.makedirs('generated_qrs', exist_ok=True)\n    \n    print(f\"Initializing QR Generation for {COMPANY_CODE} (Region: {AREA_CODE})...\")\n    \n    for i in range(batch_size):\n        # Construct the deterministic payload\n        product_code = f\"{product_prefix}{generate_noise()}\"\n        qr_data = f\"{COMPANY_CODE}-{AREA_CODE}-{product_code}\"\n        \n        # Generate the Image\n        qr = qrcode.QRCode(version=1, box_size=10, border=4)\n        qr.add_data(qr_data)\n        qr.make(fit=True)\n        \n        img = qr.make_image(fill_color=\"black\", back_color=\"white\")\n        filename = f\"generated_qrs/{qr_data}.png\"\n        img.save(filename)\n        \n        print(f\"✅ Generated: {qr_data}\")\n\nif __name__ == \"__main__\":\n    # Generate 5 sample tags \n    create_batch_qrs(product_prefix=\"TX\", batch_size=30)",
+      "summary": "import qrcode. Contains 2 functions/classes: generate_noise, create_batch_qrs.",
+      "file_hash": "49787ec2"
+    },
+    {
+      "id": "qr_generator.py::generate_noise",
+      "kind": "symbol",
+      "path": "qr_generator.py",
+      "ext": ".py",
+      "size": 3,
+      "keywords": [
+        "generate_noise",
+        "generate",
+        "noise"
+      ],
+      "symbol_type": "use_case",
+      "name": "generate_noise",
+      "line_start": 13,
+      "line_end": 15,
+      "body_hash": "1ab44e11",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "qr_generator.py::create_batch_qrs",
+      "kind": "symbol",
+      "path": "qr_generator.py",
+      "ext": ".py",
+      "size": 25,
+      "keywords": [
+        "create_batch_qrs",
+        "create",
+        "batch",
+        "qrs"
+      ],
+      "symbol_type": "use_case",
+      "name": "create_batch_qrs",
+      "line_start": 17,
+      "line_end": 41,
+      "body_hash": "bfff7050",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "whitelabel.py",
+      "kind": "file",
+      "path": "whitelabel.py",
+      "ext": ".py",
+      "size": 3980,
+      "keywords": [
+        "update_env_file",
+        "update",
+        "env",
+        "file",
+        "process_logo",
+        "process",
+        "logo",
+        "main"
+      ],
+      "content": "#!/usr/bin/env python3\nimport os\nimport subprocess\nimport re\nimport shutil\n\nENV_PATH = \".env\"\n# Define where the script should copy the uploaded logos\nMEDIA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"media\", \"branding\")\n\nCOLOR_OPTIONS = {\n    \"1\": (\"Slate / Neutral Dark\", \"slate\"),\n    \"2\": (\"Royal Indigo\", \"indigo\"),\n    \"3\": (\"Emerald Green\", \"emerald\"),\n    \"4\": (\"Rose / Crimson\", \"rose\"),\n    \"5\": (\"Amber / Gold\", \"amber\"),\n    \"6\": (\"Sky Blue\", \"sky\"),\n}\n\ndef update_env_file(key, value):\n    \"\"\"Updates or adds an environment variable in the .env file.\"\"\"\n    if not os.path.exists(ENV_PATH):\n        with open(ENV_PATH, \"w\") as f:\n            f.write(f\"{key}={value}\\n\")\n        return\n\n    with open(ENV_PATH, \"r\") as f:\n        content = f.read()\n\n    pattern = rf\"^{key}=.*$\"\n    replacement = f\"{key}='{value}'\"\n\n    if re.search(pattern, content, flags=re.MULTILINE):\n        content = re.sub(pattern, replacement, content, flags=re.MULTILINE)\n    else:\n        content += f\"\\n{replacement}\"\n\n    with open(ENV_PATH, \"w\") as f:\n        f.write(content.strip() + \"\\n\")\n\ndef process_logo():\n    \"\"\"Handles the logo copying process.\"\"\"\n    logo_path = input(\"\\n🖼️ Enter the path to the client's logo file (or press Enter to skip): \").strip()\n    \n    if not logo_path:\n        return None\n\n    if not os.path.exists(logo_path):\n        print(\"⚠ Error: File not found at that path. Skipping logo upload.\")\n        return None\n\n    # Ensure the branding media directory exists\n    os.makedirs(MEDIA_DIR, exist_ok=True)\n    \n    # Get file extension and create a standardized filename\n    _, ext = os.path.splitext(logo_path)\n    new_filename = f\"client_logo{ext.lower()}\"\n    destination = os.path.join(MEDIA_DIR, new_filename)\n\n    try:\n        shutil.copy2(logo_path, destination)\n        # Return the public URL path that Django will use\n        return f\"/media/branding/{new_filename}\"\n    except Exception as e:\n        print(f\"⚠ Error copying logo: {e}\")\n        return None\n\ndef main():\n    print(\"=\" * 50)\n    print(\"      WHITE-LABEL INSTANCE CUSTOMIZATION WIZARD   \")\n    print(\"=\" * 50)\n\n    # 1. Company Name\n    brand_name = input(\"\\n👉 Enter Client Company Name (e.g. 'Royal Banaras'): \").strip()\n    if not brand_name:\n        brand_name = \"Silk O Zari\"\n\n    # 2. Currency Symbol\n    currency_symbol = input(\"👉 Enter Currency Symbol [Default: ₹]: \").strip()\n    if not currency_symbol:\n        currency_symbol = \"₹\"\n\n    # 3. Theme Color\n    print(\"\\n🎨 Select a Primary Brand Accent Color:\")\n    for num, (name, _) in COLOR_OPTIONS.items():\n        print(f\"  [{num}] {name}\")\n    choice = input(\"Select (1-6) [Default: 1]: \").strip()\n    selected_color = COLOR_OPTIONS.get(choice, (\"Slate\", \"slate\"))[1]\n\n    # 4. Logo Upload\n    logo_url = process_logo()\n\n    # Save to .env\n    update_env_file(\"BRAND_NAME\", brand_name)\n    update_env_file(\"BRAND_COLOR\", selected_color)\n    update_env_file(\"CURRENCY_SYMBOL\", currency_symbol)\n    \n    if logo_url:\n        update_env_file(\"BRAND_LOGO\", logo_url)\n\n    print(\"\\n\" + \"-\" * 50)\n    print(f\"✔ Configuration Saved to .env:\")\n    print(f\"   • Company Name:    {brand_name}\")\n    print(f\"   • Primary Palette: {selected_color}\")\n    print(f\"   • Currency:        {currency_symbol}\")\n    if logo_url:\n        print(f\"   • Logo Path:       {logo_url}\")\n    print(\"-\" * 50)\n\n    # Restart Gunicorn service\n    restart = input(\"\\n🔄 Restart Gunicorn now to apply changes? (y/n) [y]: \").strip().lower()\n    if restart != 'n':\n        try:\n            subprocess.run([\"sudo\", \"systemctl\", \"restart\", \"gunicorn\"], check=True)\n            print(\"✔ Gunicorn restarted successfully! Changes are live.\")\n        except Exception as e:\n            print(f\"⚠ Could not restart Gunicorn automatically: {e}\")\n\nif __name__ == \"__main__\":\n    main()",
+      "summary": "!/usr/bin/env python3. Contains 3 functions/classes: update_env_file, process_logo, main.",
+      "file_hash": "ef61ec4e"
+    },
+    {
+      "id": "whitelabel.py::update_env_file",
+      "kind": "symbol",
+      "path": "whitelabel.py",
+      "ext": ".py",
+      "size": 20,
+      "keywords": [
+        "update_env_file",
+        "update",
+        "env",
+        "file"
+      ],
+      "symbol_type": "use_case",
+      "name": "update_env_file",
+      "line_start": 19,
+      "line_end": 38,
+      "body_hash": "0e7a7192",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "whitelabel.py::process_logo",
+      "kind": "symbol",
+      "path": "whitelabel.py",
+      "ext": ".py",
+      "size": 26,
+      "keywords": [
+        "process_logo",
+        "process",
+        "logo"
+      ],
+      "symbol_type": "use_case",
+      "name": "process_logo",
+      "line_start": 40,
+      "line_end": 65,
+      "body_hash": "f55113f8",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "whitelabel.py::main",
+      "kind": "symbol",
+      "path": "whitelabel.py",
+      "ext": ".py",
+      "size": 53,
+      "keywords": [
+        "main"
+      ],
+      "symbol_type": "use_case",
+      "name": "main",
+      "line_start": 67,
+      "line_end": 119,
+      "body_hash": "d80bd0b4",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "config\\asgi.py",
+      "kind": "file",
+      "path": "config\\asgi.py",
+      "ext": ".py",
+      "size": 405,
+      "keywords": [
+        "asgi",
+        "config",
+        "project",
+        "exposes",
+        "callable",
+        "module",
+        "level",
+        "variable",
+        "named",
+        "application",
+        "more",
+        "information",
+        "this",
+        "file",
+        "https",
+        "docs",
+        "djangoproject",
+        "howto"
+      ],
+      "content": "\"\"\"\nASGI config for config project.\n\nIt exposes the ASGI callable as a module-level variable named ``application``.\n\nFor more information on this file, see\nhttps://docs.djangoproject.com/en/6.1/howto/deployment/asgi/\n\"\"\"\n\nimport os\n\nfrom django.core.asgi import get_asgi_application\n\nos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')\n\napplication = get_asgi_application()\n",
+      "summary": "ASGI config for config project.",
+      "file_hash": "0b690cdb"
+    },
+    {
+      "id": "config\\settings.py",
+      "kind": "file",
+      "path": "config\\settings.py",
+      "ext": ".py",
+      "size": 7602,
+      "keywords": [
+        "django",
+        "settings",
+        "config",
+        "project",
+        "generated",
+        "admin",
+        "startproject",
+        "using",
+        "more",
+        "information",
+        "this",
+        "file",
+        "https",
+        "docs",
+        "djangoproject",
+        "topics"
+      ],
+      "content": "\"\"\"\nDjango settings for config project.\n\nGenerated by 'django-admin startproject' using Django 6.1.\n\nFor more information on this file, see\nhttps://docs.djangoproject.com/en/6.1/topics/settings/\n\nFor the full list of settings and their values, see\nhttps://docs.djangoproject.com/en/6.1/ref/settings/\n\"\"\"\nimport os\nfrom pathlib import Path\nfrom dotenv import load_dotenv\n\n\n# Build paths inside the project like this: BASE_DIR / 'subdir'.\nBASE_DIR = Path(__file__).resolve().parent.parent\n\n# Load environment variables from .env file\nload_dotenv(os.path.join(BASE_DIR, '.env'))\n\nBRAND_NAME = os.getenv('BRAND_NAME', 'Zorvia Core')\nQR_PREFIX = os.getenv('QR_PREFIX', 'SOZ-').replace(\"'\", \"\").replace('\"', \"\").strip()\n\nCURRENCY_SYMBOL = os.getenv('CURRENCY_SYMBOL', '₹')\nBRAND_LOGO = os.getenv('BRAND_LOGO', '/static/default_logo.png')\n\nTAILWIND_COLORS = {\n    \"slate\": {\n        \"50\": \"248 250 252\", \"100\": \"241 245 249\", \"200\": \"226 232 240\", \"300\": \"203 213 225\",\n        \"400\": \"148 163 184\", \"500\": \"100 116 139\", \"600\": \"71 85 105\", \"700\": \"51 65 85\",\n        \"800\": \"30 41 59\", \"900\": \"15 23 42\", \"950\": \"2 6 23\",\n    },\n    \"indigo\": {\n        \"50\": \"238 242 255\", \"100\": \"224 231 255\", \"200\": \"199 210 254\", \"300\": \"165 180 252\",\n        \"400\": \"129 140 248\", \"500\": \"99 102 241\", \"600\": \"79 70 229\", \"700\": \"67 56 202\",\n        \"800\": \"55 48 163\", \"900\": \"49 46 129\", \"950\": \"30 27 75\",\n    },\n    \"emerald\": {\n        \"50\": \"236 253 245\", \"100\": \"209 250 229\", \"200\": \"167 243 208\", \"300\": \"110 231 183\",\n        \"400\": \"52 211 153\", \"500\": \"16 185 129\", \"600\": \"5 150 105\", \"700\": \"4 120 87\",\n        \"800\": \"6 95 70\", \"900\": \"6 78 59\", \"950\": \"2 44 34\",\n    },\n    \"rose\": {\n        \"50\": \"255 241 242\", \"100\": \"255 228 230\", \"200\": \"254 205 211\", \"300\": \"253 164 175\",\n        \"400\": \"251 113 133\", \"500\": \"244 63 94\", \"600\": \"225 29 72\", \"700\": \"190 18 60\",\n        \"800\": \"159 18 57\", \"900\": \"136 19 55\", \"950\": \"76 5 25\",\n    },\n    \"amber\": {\n        \"50\": \"255 251 235\", \"100\": \"254 243 199\", \"200\": \"253 230 138\", \"300\": \"252 211 77\",\n        \"400\": \"251 191 36\", \"500\": \"245 158 11\", \"600\": \"217 119 6\", \"700\": \"180 83 9\",\n        \"800\": \"146 64 14\", \"900\": \"120 53 15\", \"950\": \"69 26 3\",\n    },\n    \"sky\": {\n        \"50\": \"240 249 255\", \"100\": \"224 242 254\", \"200\": \"186 230 253\", \"300\": \"125 211 252\",\n        \"400\": \"56 189 248\", \"500\": \"14 165 233\", \"600\": \"2 132 199\", \"700\": \"3 105 161\",\n        \"800\": \"7 89 133\", \"900\": \"12 74 110\", \"950\": \"8 47 73\",\n    },\n}\n\nraw_color = os.getenv('BRAND_COLOR', 'slate').replace(\"'\", \"\").replace('\"', \"\").strip().lower()\nselected_palette = TAILWIND_COLORS.get(raw_color, TAILWIND_COLORS[\"slate\"])\n\n# Quick-start development settings - unsuitable for production\n# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/\n\n# SECURITY WARNING: keep the secret key used in production secret!\nSECRET_KEY = os.environ.get('SECRET_KEY')\n\nDEBUG = os.environ.get('DEBUG', 'False') == 'True'\n# SECURITY WARNING: don't run with debug turned on in production!\n\n# Grab the raw string from .env\nraw_hosts = os.environ.get('ALLOWED_HOSTS', '')\n\n# Split by comma, strip spaces/quotes, and ignore empty strings\nALLOWED_HOSTS = [host.strip().replace('\"', '').replace(\"'\", \"\") for host in raw_hosts.split(',') if host.strip()]\n\n# Failsafe: If the .env is totally empty, at least allow localhost\nif not ALLOWED_HOSTS:\n    ALLOWED_HOSTS = ['localhost', '127.0.0.1']\nALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')\n\n\n# Application definition\n\nINSTALLED_APPS = [\n    'unfold',  \n    'django.contrib.admin',\n    'django.contrib.auth',\n    'django.contrib.contenttypes',\n    'django.contrib.sessions',\n    'django.contrib.messages',\n    'django.contrib.staticfiles',\n    'rest_framework',\n    'tracker'\n]\n\nMIDDLEWARE = [\n    'django.middleware.security.SecurityMiddleware',\n    'django.contrib.sessions.middleware.SessionMiddleware',\n    'django.middleware.common.CommonMiddleware',\n    'django.middleware.csrf.CsrfViewMiddleware',\n    'django.contrib.auth.middleware.AuthenticationMiddleware',\n    'django.contrib.messages.middleware.MessageMiddleware',\n    'django.middleware.clickjacking.XFrameOptionsMiddleware',\n]\n\nROOT_URLCONF = 'config.urls'\n\nTEMPLATES = [\n    {\n        'BACKEND': 'django.template.backends.django.DjangoTemplates',\n        'DIRS': [],\n        'APP_DIRS': True,\n        'OPTIONS': {\n            'context_processors': [\n                'django.template.context_processors.request',\n                'django.contrib.auth.context_processors.auth',\n                'django.contrib.messages.context_processors.messages',\n                'tracker.context_processors.brand_context',\n            ],\n        },\n    },\n]\n\nWSGI_APPLICATION = 'config.wsgi.application'\n\n\n# Database\n# https://docs.djangoproject.com/en/6.1/ref/settings/#databases\n\nDATABASES = {\n    'default': {\n        'ENGINE': 'django.db.backends.postgresql_psycopg2',\n        'NAME': os.environ.get('DB_NAME'),\n        'USER': os.environ.get('DB_USER'),\n        'PASSWORD': os.environ.get('DB_PASSWORD'),\n        'HOST': os.environ.get('DB_HOST', 'localhost'),\n        'PORT': os.environ.get('DB_PORT', ''),\n    }\n}\n\n\n# Password validation\n# https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators\n\nAUTH_PASSWORD_VALIDATORS = [\n    {\n        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',\n    },\n    {\n        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',\n    },\n    {\n        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',\n    },\n    {\n        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',\n    },\n]\n\n\n# Internationalization\n# https://docs.djangoproject.com/en/6.1/topics/i18n/\n\nLANGUAGE_CODE = 'en-us'\n\nTIME_ZONE = 'UTC'\n\nUSE_I18N = True\n\nUSE_TZ = True\n\n\n# Static files (CSS, JavaScript, Images)\n# https://docs.djangoproject.com/en/6.1/howto/static-files/\n\nSTATIC_URL = 'static/'\nSTATIC_ROOT = BASE_DIR / 'staticfiles'\nSTATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')\nMEDIA_URL = 'media/'\nMEDIA_ROOT = BASE_DIR / 'media'\nMEDIA_ROOT = os.path.join(BASE_DIR, 'media')\n\n# Email\n# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration\n\nMAILERS = {\n    'default': {\n        'BACKEND': 'django.core.mail.backends.console.EmailBackend',\n    },\n}\n                    \nUNFOLD = {\n    \"SITE_TITLE\": f\"{BRAND_NAME} Portal\",\n    \"SITE_HEADER\": f\"{BRAND_NAME} Dashboard\",  # This fixes the missing space!\n    \"COLORS\": {\n        \"primary\": selected_palette,           # This applies your selected Tailwind color!\n    },\n    \"DASHBOARD_CALLBACK\": \"tracker.views.admin_dashboard_callback\",\n    \"SITE_ICON\": {\n        \"light\": lambda request: BRAND_LOGO,\n        \"dark\": lambda request: BRAND_LOGO,\n    },\n    \"SIDEBAR\": {\n        \"show_search\": True,\n        \"show_all_applications\": True,\n        \"navigation\": [\n            {\n                \"title\": \"Business Tools\",\n                \"separator\": True,\n                \"items\": [\n                    {\"title\": \"Financial Dashboard\", \"icon\": \"monitoring\", \"link\": \"/dashboard/\"},\n                    {\"title\": \"Live Catalogue\", \"icon\": \"storefront\", \"link\": \"/catalogue/\"},\n                    {\"title\": \"Barcode Scanner\", \"icon\": \"qr_code_scanner\", \"link\": \"/scanner/\"},\n                ],\n            },\n        ],\n    },\n}",
+      "summary": "Django settings for config project.",
+      "file_hash": "c313d183"
+    },
+    {
+      "id": "config\\urls.py",
+      "kind": "file",
+      "path": "config\\urls.py",
+      "ext": ".py",
+      "size": 1193,
+      "keywords": [
+        "configuration",
+        "config",
+        "project",
+        "urlpatterns",
+        "list",
+        "routes",
+        "urls",
+        "views",
+        "more",
+        "information",
+        "please",
+        "https",
+        "docs",
+        "djangoproject",
+        "topics",
+        "http",
+        "examples",
+        "function"
+      ],
+      "content": "\"\"\"\nURL configuration for config project.\n\nThe `urlpatterns` list routes URLs to views. For more information please see:\n    https://docs.djangoproject.com/en/6.1/topics/http/urls/\nExamples:\nFunction views\n    1. Add an import:  from my_app import views\n    2. Add a URL to urlpatterns:  path('', views.home, name='home')\nClass-based views\n    1. Add an import:  from other_app.views import Home\n    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')\nIncluding another URLconf\n    1. Import the include() function: from django.urls import include, path\n    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))\n\"\"\"\nfrom django.contrib import admin\nfrom django.urls import path,include\nfrom django.views.generic import RedirectView\nfrom tracker.views import inventory_list_view,live_catalogue\n\nurlpatterns = [\n    path('admin/', admin.site.urls),\n    path('', RedirectView.as_view(url='/inventory/', permanent=False), name='home'),\n    path('', include('tracker.urls')),\n    path('inventory/', inventory_list_view, name='inventory_list'),\n    path('catalogue/', live_catalogue, name='live_catalogue'),  # This links your API endpoints\n]\n",
+      "summary": "URL configuration for config project.",
+      "file_hash": "8dbdd8ca"
+    },
+    {
+      "id": "config\\wsgi.py",
+      "kind": "file",
+      "path": "config\\wsgi.py",
+      "ext": ".py",
+      "size": 405,
+      "keywords": [
+        "wsgi",
+        "config",
+        "project",
+        "exposes",
+        "callable",
+        "module",
+        "level",
+        "variable",
+        "named",
+        "application",
+        "more",
+        "information",
+        "this",
+        "file",
+        "https",
+        "docs",
+        "djangoproject",
+        "howto"
+      ],
+      "content": "\"\"\"\nWSGI config for config project.\n\nIt exposes the WSGI callable as a module-level variable named ``application``.\n\nFor more information on this file, see\nhttps://docs.djangoproject.com/en/6.1/howto/deployment/wsgi/\n\"\"\"\n\nimport os\n\nfrom django.core.wsgi import get_wsgi_application\n\nos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')\n\napplication = get_wsgi_application()\n",
+      "summary": "WSGI config for config project.",
+      "file_hash": "818c4c14"
+    },
+    {
+      "id": "config\\__init__.py",
+      "kind": "file",
+      "path": "config\\__init__.py",
+      "ext": ".py",
+      "size": 0,
+      "keywords": [],
+      "content": "",
+      "summary": "Handles config   init.",
+      "file_hash": "d41d8cd9"
+    },
+    {
+      "id": "tracker\\admin.py",
+      "kind": "file",
+      "path": "tracker\\admin.py",
+      "ext": ".py",
+      "size": 5509,
+      "keywords": [
+        "export_as_csv",
+        "export",
+        "csv",
+        "finishedproductadmin",
+        "finished",
+        "product",
+        "admin",
+        "resellertokenadmin",
+        "reseller",
+        "token"
+      ],
+      "content": "from unfold.admin import ModelAdmin\nfrom django.contrib import admin\nfrom django.utils.html import format_html\n\nimport csv\nfrom django.http import HttpResponse\nfrom unfold.decorators import action\nimport os\nfrom .models import FinishedProduct, ResellerToken\n\nadmin.site.index_title = \"Inventory Management\"\nBRAND_NAME = os.getenv('BRAND_NAME', 'Silk O Zari')\nBRAND_COLOR = os.getenv('BRAND_COLOR', 'slate')\nCURRENCY_SYMBOL = os.getenv('CURRENCY_SYMBOL', '₹')\n\n\n\n@admin.action(description='Generate Report / Export to CSV')\ndef export_as_csv(self, request, queryset):\n    response = HttpResponse(content_type='text/csv')\n    response['Content-Disposition'] = 'attachment; filename=\"inventory_analytics_report.csv\"'\n    \n    writer = csv.writer(response)\n    writer.writerow([\n        'Barcode ID', 'Product Type', 'Design Work', 'Weaver', \n        'Current Status', 'Date Entered', 'Date Dispatched', \n        'Sales Channel', 'Destination City', 'Destination State'\n    ])\n    \n    for obj in queryset:\n        writer.writerow([\n            obj.id, obj.product_type, obj.design_work, obj.weaver_name, \n            obj.status, obj.date_entered, obj.date_dispatched, \n            obj.sales_channel, obj.derived_city, obj.derived_state\n        ])\n    return response\n\n@admin.register(FinishedProduct)\nclass FinishedProductAdmin(ModelAdmin):\n    # What shows up in the main table\n    list_display = ('id', 'product_type','image_thumbnail', 'status_badge', 'derived_city', 'date_entered','return_reason')\n    list_filter = ('status', 'sales_channel', 'product_type', 'derived_state','return_reason')\n    search_fields = ('id', 'product_type', 'weaver_name', 'design_work', 'pincode','derived_city')\n    \n    date_hierarchy = 'date_entered'\n\n    # Made the preview read-only so it renders as an image, not a file upload button\n    readonly_fields = ('id', 'date_entered', 'date_dispatched', 'derived_city', 'derived_state', 'image_preview')\n    # How many items per page before pagination\n    list_per_page = 50\n\n    actions_list = [\"export_all_to_csv\"]\n\n    @action(description=\"Export to Excel / CSV\")\n    def export_all_to_csv(self, request):\n        \"\"\" Exports all items currently matching the user's active filters \"\"\"\n        \n        # Get the queryset of whatever is currently filtered on the screen\n        queryset = self.get_changelist_instance(request).get_queryset(request)\n        \n        response = HttpResponse(content_type='text/csv')\n        response['Content-Disposition'] = 'attachment; filename=\"silk_o_zari_inventory_report.csv\"'\n        \n        writer = csv.writer(response)\n        writer.writerow([\n            'Barcode ID', 'Product Type', 'Design Work', 'Weaver', \n            'Current Status', 'Date Entered', 'Date Dispatched', \n            'Sales Channel', 'Destination City', 'Destination State'\n        ])\n        \n        for obj in queryset:\n            writer.writerow([\n                obj.id, obj.product_type, obj.design_work, obj.weaver_name, \n                obj.status, obj.date_entered, obj.date_dispatched, \n                obj.sales_channel, obj.derived_city, obj.derived_state\n            ])\n        return response\n        \n    # (Keep your existing status_badge function here)\n\n    # Organizes the detail view into clean sections\n    fieldsets = (\n        ('Product Identification', {\n            'fields': ('id', 'product_type', 'design_work','product_image', 'image_preview', 'weaver_name')\n        }),\n        ('Inventory Status', {\n            'fields': ('status','return_reason', 'date_entered')\n        }),\n        ('Dispatch Tracking Data', {\n            'fields': ('sales_channel', 'date_dispatched', 'pincode', 'derived_city', 'derived_state'),\n            'classes': ('collapse',), # This hides the dispatch section under a dropdown if empty\n        }),\n    )\n    @admin.display(description='Photo')\n    def image_thumbnail(self, obj):\n        if obj.product_image:\n            return format_html('<img src=\"{}\" style=\"height: 40px; border-radius: 4px;\" />', obj.product_image.url)\n        return \"-\"\n\n    @admin.display(description='Preview')\n    def image_preview(self, obj):\n        if obj.product_image:\n            return format_html('<img src=\"{}\" style=\"max-height: 300px; border-radius: 8px;\" />', obj.product_image.url)\n        return \"No image uploaded\"\n\n    # Custom HTML to create colored status tags\n    @admin.display(description='Live Status')\n    def status_badge(self, obj):\n        if obj.status == 'IN_STOCK':\n            return format_html('<span style=\"color: white; background-color: #10b981; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;\">IN STOCK</span>')\n        elif obj.status == 'DISPATCHED':\n            return format_html('<span style=\"color: white; background-color: #3b82f6; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;\">DISPATCHED</span>')\n        return format_html('<span style=\"color: white; background-color: #ef4444; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 12px;\">{}</span>', obj.status)\n\n@admin.register(ResellerToken)\nclass ResellerTokenAdmin(admin.ModelAdmin):\n    list_display = ('reseller_name', 'is_active', 'created_at', 'token')\n    list_filter = ('is_active',)\n    search_fields = ('reseller_name',)\n    # Make the token read-only so it can't be accidentally edited\n    readonly_fields = ('token',)",
+      "summary": "from unfold.admin import ModelAdmin. Contains 3 functions/classes: export_as_csv, FinishedProductAdmin, ResellerTokenAdmin.",
+      "file_hash": "5f98e504"
+    },
+    {
+      "id": "tracker\\admin.py::export_as_csv",
+      "kind": "symbol",
+      "path": "tracker\\admin.py",
+      "ext": ".py",
+      "size": 18,
+      "keywords": [
+        "export_as_csv",
+        "export",
+        "csv"
+      ],
+      "symbol_type": "use_case",
+      "name": "export_as_csv",
+      "line_start": 18,
+      "line_end": 35,
+      "body_hash": "c549eb4a",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\admin.py::FinishedProductAdmin",
+      "kind": "symbol",
+      "path": "tracker\\admin.py",
+      "ext": ".py",
+      "size": 75,
+      "keywords": [
+        "finishedproductadmin",
+        "finished",
+        "product",
+        "admin"
+      ],
+      "symbol_type": "model",
+      "name": "FinishedProductAdmin",
+      "line_start": 38,
+      "line_end": 112,
+      "body_hash": "8a6c9f60",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\admin.py::ResellerTokenAdmin",
+      "kind": "symbol",
+      "path": "tracker\\admin.py",
+      "ext": ".py",
+      "size": 6,
+      "keywords": [
+        "resellertokenadmin",
+        "reseller",
+        "token",
+        "admin"
+      ],
+      "symbol_type": "model",
+      "name": "ResellerTokenAdmin",
+      "line_start": 115,
+      "line_end": 120,
+      "body_hash": "e6544cd4",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\apps.py",
+      "kind": "file",
+      "path": "tracker\\apps.py",
+      "ext": ".py",
+      "size": 94,
+      "keywords": [
+        "trackerconfig",
+        "tracker",
+        "config"
+      ],
+      "content": "from django.apps import AppConfig\n\n\nclass TrackerConfig(AppConfig):\n    name = 'tracker'\n",
+      "summary": "from django.apps import AppConfig. Contains 1 function: TrackerConfig.",
+      "file_hash": "9a0debaa"
+    },
+    {
+      "id": "tracker\\apps.py::TrackerConfig",
+      "kind": "symbol",
+      "path": "tracker\\apps.py",
+      "ext": ".py",
+      "size": 2,
+      "keywords": [
+        "trackerconfig",
+        "tracker",
+        "config"
+      ],
+      "symbol_type": "model",
+      "name": "TrackerConfig",
+      "line_start": 3,
+      "line_end": 4,
+      "body_hash": "eddb80f6",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\context_processors.py",
+      "kind": "file",
+      "path": "tracker\\context_processors.py",
+      "ext": ".py",
+      "size": 584,
+      "keywords": [
+        "brand_context",
+        "brand",
+        "context"
+      ],
+      "content": "from django.conf import settings\nimport os\ndef brand_context(request):\n    # Fetch and aggressively clean the exact color word from the .env file\n    raw_color = os.getenv('BRAND_COLOR', 'slate').replace(\"'\", \"\").replace('\"', \"\").strip().lower()\n    \n    return {\n        'BRAND_NAME': os.getenv('BRAND_NAME', 'Zorvia Core').replace(\"'\", \"\").replace('\"', \"\"),\n        'BRAND_COLOR': raw_color,\n        'CURRENCY_SYMBOL': os.getenv('CURRENCY_SYMBOL', '₹').replace(\"'\", \"\").replace('\"', \"\"),\n        'BRAND_LOGO': os.getenv('BRAND_LOGO', '/static/default_logo.png'), \n    }",
+      "summary": "from django.conf import settings. Contains 1 function: brand_context.",
+      "file_hash": "992f668e"
+    },
+    {
+      "id": "tracker\\context_processors.py::brand_context",
+      "kind": "symbol",
+      "path": "tracker\\context_processors.py",
+      "ext": ".py",
+      "size": 10,
+      "keywords": [
+        "brand_context",
+        "brand",
+        "context"
+      ],
+      "symbol_type": "use_case",
+      "name": "brand_context",
+      "line_start": 2,
+      "line_end": 11,
+      "body_hash": "f9aa77fb",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\models.py",
+      "kind": "file",
+      "path": "tracker\\models.py",
+      "ext": ".py",
+      "size": 2995,
+      "keywords": [
+        "inventorystatus",
+        "inventory",
+        "status",
+        "saleschannel",
+        "sales",
+        "channel",
+        "finishedproduct",
+        "finished",
+        "product",
+        "resellertoken",
+        "reseller",
+        "token"
+      ],
+      "content": "import uuid\nfrom django.db import models\nfrom django.utils import timezone\nimport secrets\n\n\nclass InventoryStatus(models.TextChoices):\n    IN_STOCK = 'IN_STOCK', 'In Stock'\n    DISPATCHED = 'DISPATCHED', 'Dispatched'\n    RETURNED = 'RETURNED', 'Returned'\n\nclass SalesChannel(models.TextChoices):\n    RETAIL = 'RETAIL', 'Retail Shop'\n    WHOLESALE = 'WHOLESALE', 'Wholesale B2B'\n    ONLINE = 'ONLINE', 'Online E-commerce'\n\nRETURN_REASONS = [\n    ('UNSOLD', 'Unsold / Stock Swap'),\n    ('DEFECTIVE', 'Defective / Damaged'),\n    ('CANCELED', 'Customer Canceled'),\n    ('WRONG_ITEM', 'Wrong Item Shipped'),\n    ('OTHER', 'Other'),\n]\n\nclass FinishedProduct(models.Model):\n    # Allows both standard UUIDs AND custom printed text QR strings\n    id = models.CharField(primary_key=True, max_length=100, default=uuid.uuid4, editable=True)\n    product_image = models.ImageField(upload_to='product_images/', null=True, blank=True)\n    \n    product_type = models.CharField(max_length=50,db_index=True)\n    design_work = models.CharField(max_length=100, db_index=True, blank=True, null=True)\n    weaver_name = models.CharField(max_length=100, db_index=True, blank=True, null=True)\n # Inside your FinishedProduct class, add this below your other fields:\n    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text=\"Selling price of the item\")\n    return_reason = models.CharField(max_length=50, choices=RETURN_REASONS, null=True, blank=True)\n    status = models.CharField(max_length=20, choices=InventoryStatus.choices, default=InventoryStatus.IN_STOCK)\n    date_entered = models.DateTimeField(default=timezone.now)\n    \n    date_dispatched = models.DateTimeField(null=True, blank=True)\n    sales_channel = models.CharField(max_length=20, choices=SalesChannel.choices, null=True, blank=True)\n    pincode = models.CharField(max_length=6, null=True, db_index=True, blank=True)\n    derived_state = models.CharField(max_length=50, null=True, db_index=True, blank=True)\n    derived_city = models.CharField(max_length=50, null=True, db_index=True, blank=True)\n\n\n\n    def __str__(self):\n        return f\"{self.product_type} - {self.id}\"\n\nclass ResellerToken(models.Model):\n    reseller_name = models.CharField(max_length=100, help_text=\"Name of the reseller company\")\n    token = models.CharField(max_length=64, unique=True, blank=True, help_text=\"Auto-generated secure access token\")\n    is_active = models.BooleanField(default=True, help_text=\"Uncheck this to instantly revoke access\")\n    created_at = models.DateTimeField(auto_now_add=True)\n    \n    def save(self, *args, **kwargs):\n        # Automatically generate a 32-byte secure token if one doesn't exist\n        if not self.token:\n            self.token = secrets.token_urlsafe(32)\n        super().save(*args, **kwargs)\n\n    def __str__(self):\n        status_label = \"Active\" if self.is_active else \"Revoked\"\n        return f\"{self.reseller_name} ({status_label})\"",
+      "summary": "import uuid. Contains 4 functions/classes: InventoryStatus, SalesChannel, FinishedProduct, ResellerToken.",
+      "file_hash": "6a161d96"
+    },
+    {
+      "id": "tracker\\models.py::InventoryStatus",
+      "kind": "symbol",
+      "path": "tracker\\models.py",
+      "ext": ".py",
+      "size": 4,
+      "keywords": [
+        "inventorystatus",
+        "inventory",
+        "status"
+      ],
+      "symbol_type": "model",
+      "name": "InventoryStatus",
+      "line_start": 6,
+      "line_end": 9,
+      "body_hash": "2415bbd4",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\models.py::SalesChannel",
+      "kind": "symbol",
+      "path": "tracker\\models.py",
+      "ext": ".py",
+      "size": 12,
+      "keywords": [
+        "saleschannel",
+        "sales",
+        "channel"
+      ],
+      "symbol_type": "model",
+      "name": "SalesChannel",
+      "line_start": 11,
+      "line_end": 22,
+      "body_hash": "3d82c7e4",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\models.py::FinishedProduct",
+      "kind": "symbol",
+      "path": "tracker\\models.py",
+      "ext": ".py",
+      "size": 24,
+      "keywords": [
+        "finishedproduct",
+        "finished",
+        "product"
+      ],
+      "symbol_type": "model",
+      "name": "FinishedProduct",
+      "line_start": 24,
+      "line_end": 47,
+      "body_hash": "bb6dfcbb",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\models.py::ResellerToken",
+      "kind": "symbol",
+      "path": "tracker\\models.py",
+      "ext": ".py",
+      "size": 15,
+      "keywords": [
+        "resellertoken",
+        "reseller",
+        "token"
+      ],
+      "symbol_type": "model",
+      "name": "ResellerToken",
+      "line_start": 49,
+      "line_end": 63,
+      "body_hash": "e3e36601",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\tests.py",
+      "kind": "file",
+      "path": "tracker\\tests.py",
+      "ext": ".py",
+      "size": 63,
+      "keywords": [],
+      "content": "from django.test import TestCase\n\n# Create your tests here.\n",
+      "summary": "from django.test import TestCase.",
+      "file_hash": "465b7e9f"
+    },
+    {
+      "id": "tracker\\urls.py",
+      "kind": "file",
+      "path": "tracker\\urls.py",
+      "ext": ".py",
+      "size": 463,
+      "keywords": [],
+      "content": "from django.urls import path\nfrom . import views\n\nurlpatterns = [\n    path('scanner/', views.scanner_ui, name='scanner_ui'),\n    path('api/inbound/', views.log_inbound, name='log_inbound'),\n    path('api/outbound/', views.log_outbound, name='log_outbound'),\n    path('api/return/', views.log_return, name='log_return'),\n    path('catalogue/', views.live_catalogue, name='catalogue'),\n    path('dashboard/', views.financial_dashboard, name='dashboard')\n]",
+      "summary": "from django.urls import path.",
+      "file_hash": "6f94f726"
+    },
+    {
+      "id": "tracker\\views.py",
+      "kind": "file",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 15137,
+      "keywords": [
+        "inventory_list_view",
+        "inventory",
+        "list",
+        "view",
+        "is_valid_qr",
+        "valid",
+        "compress_image",
+        "compress",
+        "image",
+        "scanner_ui",
+        "scanner",
+        "live_catalogue",
+        "live",
+        "catalogue",
+        "log_inbound",
+        "log",
+        "inbound",
+        "log_outbound",
+        "outbound",
+        "log_return",
+        "return",
+        "financial_dashboard",
+        "financial",
+        "dashboard",
+        "admin_dashboard_callback",
+        "admin",
+        "callback"
+      ],
+      "content": "from django.shortcuts import render\nfrom rest_framework.decorators import api_view,authentication_classes, permission_classes\nfrom rest_framework.response import Response\nfrom rest_framework import status\nfrom django.views.decorators.csrf import csrf_exempt\nfrom django.utils import timezone\nimport requests\nfrom .models import FinishedProduct, InventoryStatus\nfrom django.db.models import Sum\nfrom django.db.models import Sum, Q\nimport re\nimport csv\nfrom django.http import HttpResponse\n# --- NEW IMPORTS FOR COMPRESSION ---\nfrom PIL import Image\nimport io\nimport sys\nfrom django.core.files.uploadedfile import InMemoryUploadedFile\n#links to inventory_list.html and sends the data from the database\nfrom django.shortcuts import render\nfrom django.db.models import Sum, Q\nfrom .models import FinishedProduct,ResellerToken,InventoryStatus\nfrom django.http import HttpResponseForbidden\n\n\n\ndef inventory_list_view(request):\n    # 1. Get ALL filter values from the URL\n    status_filter = request.GET.get('status')\n    search_query = request.GET.get('search')\n    start_date = request.GET.get('start_date')\n    end_date = request.GET.get('end_date')\n    min_price = request.GET.get('min_price')\n    max_price = request.GET.get('max_price')\n    pincode = request.GET.get('pincode')\n    \n    # 2. Start with all products\n    products = FinishedProduct.objects.all().order_by('-date_entered')\n    \n    # 3. Apply Filters sequentially\n    if status_filter:\n        products = products.filter(status=status_filter)\n    if search_query:\n        products = products.filter(\n            Q(id__icontains=search_query) | \n            Q(weaver_name__icontains=search_query) | \n            Q(design_work__icontains=search_query)\n        )\n    if start_date:\n        products = products.filter(date_entered__gte=start_date)\n    if end_date:\n        products = products.filter(date_entered__lte=end_date)\n    if min_price:\n        products = products.filter(price__gte=min_price)\n    if max_price:\n        products = products.filter(price__lte=max_price)\n    if pincode:\n        products = products.filter(pincode__icontains=pincode)\n\n    # ---------------------------------------------------------\n    # NEW: Crash-Proof CSV Export\n    # ---------------------------------------------------------\n    if request.GET.get('export') == 'csv':\n        response = HttpResponse(content_type='text/csv')\n        response['Content-Disposition'] = 'attachment; filename=\"inventory_report.csv\"'\n        \n        writer = csv.writer(response)\n        writer.writerow([\n            'Barcode ID', 'Product Type', 'Design Work', 'Weaver', \n            'Price', 'Current Status', 'Date Entered', 'Date Dispatched', \n            'Sales Channel', 'Destination Pincode', 'Destination City', 'Destination State'\n        ])\n        \n        for obj in products:\n            # Safely get dates if they exist\n            date_in = obj.date_entered.strftime('%Y-%m-%d') if getattr(obj, 'date_entered', None) else ''\n            date_out = obj.date_dispatched.strftime('%Y-%m-%d') if getattr(obj, 'date_dispatched', None) else ''\n            \n            writer.writerow([\n                getattr(obj, 'id', ''), \n                getattr(obj, 'product_type', ''), \n                getattr(obj, 'design_work', ''), \n                getattr(obj, 'weaver_name', ''), \n                getattr(obj, 'price', 0.0), \n                getattr(obj, 'status', ''), \n                date_in, \n                date_out, \n                getattr(obj, 'sales_channel', ''), \n                getattr(obj, 'pincode', ''), \n                getattr(obj, 'derived_city', ''), \n                getattr(obj, 'derived_state', '')\n            ])\n        return response\n\n    # 4. Calculate global dashboard metrics\n    global_stock = FinishedProduct.objects.all()\n    in_stock = global_stock.filter(status__in=['IN_STOCK', 'RETURNED'])\n    dispatched = global_stock.filter(status='DISPATCHED')\n    \n    inventory_value = in_stock.aggregate(Sum('price'))['price__sum'] or 0\n    total_sales = dispatched.aggregate(Sum('price'))['price__sum'] or 0\n    \n    # 5. Pass everything back to the template\n    context = {\n        'products': products,\n        'inventory_value': inventory_value,\n        'stock_count': in_stock.count(),\n        'total_sales': total_sales,\n        'sales_count': dispatched.count(),\n        'current_status': status_filter,\n        'search_query': search_query or '',\n        'start_date': start_date or '',\n        'end_date': end_date or '',\n        'min_price': min_price or '',\n        'max_price': max_price or '',\n        'pincode': pincode or '',\n    }\n    \n    return render(request, 'inventory_list.html', context)\n\ndef is_valid_qr(qr_id):\n    \"\"\"\n    Validates QR format: 3-4 letters (Company) - 3 letters (Area) - Alphanumeric (Product+Noise)\n    Example match: SOZ-LKO-TX8492\n    \"\"\"\n    pattern = r'^[A-Z]{3,4}-[A-Z]{3}-[A-Z0-9]{4,10}$'\n    return re.match(pattern, qr_id) is not None\n\n\ndef compress_image(uploaded_image):\n    \"\"\" Resizes and compresses an image before saving to disk \"\"\"\n    img = Image.open(uploaded_image)\n    \n    # Strip alpha channels (transparency) if it's a PNG, as JPEGs don't support it\n    if img.mode != 'RGB':\n        img = img.convert('RGB')\n        \n    # Resize the image so its longest edge is max 1200px (keeps aspect ratio)\n    img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)\n    \n    output = io.BytesIO()\n    \n    # Compress and save to the memory buffer as a JPEG with 70% quality\n    img.save(output, format='JPEG', quality=70, optimize=True)\n    output.seek(0)\n    \n    # Construct a new Django file object with the compressed data\n    compressed_file = InMemoryUploadedFile(\n        output,\n        'ImageField',\n        f\"{uploaded_image.name.split('.')[0]}_compressed.jpg\",\n        'image/jpeg',\n        sys.getsizeof(output),\n        None\n    )\n    return compressed_file\n\ndef scanner_ui(request):\n    return render(request, 'scanner.html')\ndef live_catalogue(request):\n    # 1. Security Check\n    provided_token = request.GET.get('token')\n    if not provided_token:\n        return HttpResponseForbidden(\"Access Denied: Missing reseller token.\")\n        \n    try:\n        reseller = ResellerToken.objects.get(token=provided_token, is_active=True)\n    except ResellerToken.DoesNotExist:\n        return HttpResponseForbidden(\"Access Denied: Invalid or revoked link.\")\n\n    # 2. Get Filter Parameters (Including Search)\n    search_query = request.GET.get('search')\n    product_type = request.GET.get('product_type')\n    weaver = request.GET.get('weaver')\n    min_price = request.GET.get('min_price')\n    max_price = request.GET.get('max_price')\n\n    # 3. Base Query\n    products = FinishedProduct.objects.filter(\n        status__in=[InventoryStatus.IN_STOCK, InventoryStatus.RETURNED]\n    ).order_by('-date_entered')\n\n    # 4. Apply Global Keyword Search\n    if search_query:\n        products = products.filter(\n            Q(id__icontains=search_query) | \n            Q(weaver_name__icontains=search_query) | \n            Q(design_work__icontains=search_query) |\n            Q(product_type__icontains=search_query)\n        )\n\n    # 5. Apply Specific Filters\n    if product_type:\n        products = products.filter(product_type__icontains=product_type)\n    if weaver:\n        products = products.filter(weaver_name__icontains=weaver)\n    if min_price:\n        products = products.filter(price__gte=min_price)\n    if max_price:\n        products = products.filter(price__lte=max_price)\n\n    context = {\n        'products': products,\n        'reseller_name': reseller.reseller_name,\n        'token': provided_token,\n        'search_query': search_query or '',\n        'product_type_query': product_type or '',\n        'weaver_query': weaver or '',\n        'min_price': min_price or '',\n        'max_price': max_price or '',\n    }\n    \n    return render(request, 'catalogue.html', context)\n\n@csrf_exempt\n@api_view(['POST'])\n@authentication_classes([])\n@permission_classes([])\ndef log_inbound(request):\n    qr_id = request.data.get('qr_id')\n    \n    # Validation gatekeeper\n    if qr_id and not is_valid_qr(qr_id):\n        return Response(\n            {'error': 'Invalid QR Format. Unrecognized company or area code.'}, \n            status=status.HTTP_400_BAD_REQUEST\n        )\n    \n    product_type = request.data.get('product_type') \n    raw_price = request.data.get('price')\n    price_value = raw_price if raw_price else 0.00\n    \n    # NEW: Capture the reused image path from bulk mode\n    reused_image_path = request.data.get('reused_image_path')\n    \n    if not qr_id or not product_type:\n        return Response({'error': 'Missing QR ID or Product Type'}, status=status.HTTP_400_BAD_REQUEST)\n        \n    try:\n        existing_product = FinishedProduct.objects.filter(id=qr_id).first()\n        if existing_product:\n            if existing_product.status == InventoryStatus.IN_STOCK:\n                return Response({'error': 'Item is already IN_STOCK!'}, status=status.HTTP_400_BAD_REQUEST)\n            else:\n                return Response({'error': 'Item already DISPATCHED. Use the Return tab.'}, status=status.HTTP_400_BAD_REQUEST)\n\n        product = FinishedProduct.objects.create(\n            id=qr_id,\n            product_type=product_type,\n            design_work=request.data.get('design_work', ''),\n            weaver_name=request.data.get('weaver_name', ''),\n            price=price_value,\n            status=InventoryStatus.IN_STOCK,\n            date_entered=timezone.now()\n        )\n        \n        saved_path = \"\"\n        \n        # --- NEW: IMAGE HANDLING LOGIC ---\n        if reused_image_path:\n            product.product_image.name = reused_image_path\n            product.save()\n            saved_path = reused_image_path\n        elif 'product_image' in request.FILES:\n            raw_image = request.FILES['product_image']\n            product.product_image = compress_image(raw_image)\n            product.save()\n            saved_path = product.product_image.name\n            \n        return Response({\n            'message': f'Item {qr_id} logged successfully!',\n            'saved_image_path': saved_path\n        })\n    except Exception as e:\n        return Response({'error': f\"Database Error: {str(e)}\"}, status=status.HTTP_400_BAD_REQUEST)\n    \n@csrf_exempt\n@api_view(['POST'])\n@authentication_classes([])\n@permission_classes([])\ndef log_outbound(request):\n    qr_id = request.data.get('qr_id')\n    pincode = request.data.get('pincode')\n    channel = request.data.get('sales_channel')\n    \n    if not qr_id:\n        return Response({'error': 'Missing QR code'}, status=status.HTTP_400_BAD_REQUEST)\n        \n    try:\n        product = FinishedProduct.objects.get(id=qr_id)\n        if product.status == InventoryStatus.DISPATCHED:\n            date_str = product.date_dispatched.strftime(\"%d-%b-%Y\") if product.date_dispatched else \"an unknown date\"\n            return Response({'error': f'Item already marked as DISPATCHED on {date_str}!'}, status=status.HTTP_400_BAD_REQUEST)\n            \n    except FinishedProduct.DoesNotExist:\n        return Response({'error': 'Item not found! You must log it Inbound first.'}, status=status.HTTP_404_NOT_FOUND)\n        \n    state, city = \"\", \"\"\n    if pincode:\n        try:\n            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}\n            resp = requests.get(f'https://api.postalpincode.in/pincode/{pincode}', headers=headers, timeout=5)\n            \n            if resp.status_code == 200:\n                data = resp.json()[0]\n                if data.get('Status') == 'Success':\n                    post_office = data['PostOffice'][0]\n                    state = post_office.get('State', '')\n                    city = post_office.get('District', '')\n        except Exception:\n            pass\n            \n    product.status = InventoryStatus.DISPATCHED\n    product.date_dispatched = timezone.now()\n    product.pincode = pincode\n    product.derived_state = state\n    product.derived_city = city\n    product.sales_channel = channel\n    product.save()\n    \n    location_msg = f\"{city}, {state}\".strip(', ')\n    return Response({\n        'message': f'Dispatched successfully to {location_msg}' if location_msg else 'Dispatched successfully!'\n    })\n\n@csrf_exempt\n@api_view(['POST'])\n@authentication_classes([])\n@permission_classes([])\ndef log_return(request):\n\n    qr_id = request.data.get('qr_id')\n    reason = request.data.get('return_reason', 'OTHER')\n    # --- NEW VALIDATION GATEKEEPER ---\n    if qr_id and not is_valid_qr(qr_id):\n        return Response(\n            {'error': 'Invalid QR Format. Unrecognized company or area code.'}, \n            status=status.HTTP_400_BAD_REQUEST\n        )\n    \n    product_type = request.data.get('product_type')\n\n    if not qr_id:\n        return Response({'error': 'Missing QR code'}, status=status.HTTP_400_BAD_REQUEST)\n        \n    try:\n        product = FinishedProduct.objects.get(id=qr_id)\n        if product.status == InventoryStatus.RETURNED or product.status == InventoryStatus.IN_STOCK:\n            return Response({'error': 'Item is already in the warehouse!'}, status=status.HTTP_400_BAD_REQUEST)\n            \n        product.status = InventoryStatus.RETURNED\n        product.return_reason = reason\n        product.save()\n        return Response({'message': 'Item marked as RETURNED and placed back in inventory.'})\n    except FinishedProduct.DoesNotExist:\n        return Response({'error': 'Item not found in system!'}, status=status.HTTP_404_NOT_FOUND)\ndef financial_dashboard(request):\n    # Calculate Capital on Shelves (IN_STOCK)\n    in_stock = FinishedProduct.objects.filter(status=InventoryStatus.IN_STOCK)\n    inventory_value = in_stock.aggregate(Sum('price'))['price__sum'] or 0\n    stock_count = in_stock.count()\n\n    # Calculate Total Revenue (DISPATCHED)\n    dispatched = FinishedProduct.objects.filter(status=InventoryStatus.DISPATCHED)\n    total_sales = dispatched.aggregate(Sum('price'))['price__sum'] or 0\n    sales_count = dispatched.count()\n\n    context = {\n        'inventory_value': inventory_value,\n        'stock_count': stock_count,\n        'total_sales': total_sales,\n        'sales_count': sales_count,\n    }\n    return render(request, 'dashboard.html', context)\ndef admin_dashboard_callback(request, context):\n    in_stock = FinishedProduct.objects.filter(status=InventoryStatus.IN_STOCK)\n    dispatched = FinishedProduct.objects.filter(status=InventoryStatus.DISPATCHED)\n\n    context.update({\n        \"inventory_value\": in_stock.aggregate(Sum('price'))['price__sum'] or 0,\n        \"stock_count\": in_stock.count(),\n        \"total_sales\": dispatched.aggregate(Sum('price'))['price__sum'] or 0,\n        \"sales_count\": dispatched.count(),\n    })\n    return context",
+      "summary": "from django.shortcuts import render. Contains 5 functions/classes: inventory_list_view, is_valid_qr, compress_image, scanner_ui, ....",
+      "file_hash": "c34f4103"
+    },
+    {
+      "id": "tracker\\views.py::inventory_list_view",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 93,
+      "keywords": [
+        "inventory_list_view",
+        "inventory",
+        "list",
+        "view"
+      ],
+      "symbol_type": "use_case",
+      "name": "inventory_list_view",
+      "line_start": 26,
+      "line_end": 118,
+      "body_hash": "6dffa67c",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\views.py::is_valid_qr",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 7,
+      "keywords": [
+        "is_valid_qr",
+        "valid"
+      ],
+      "symbol_type": "use_case",
+      "name": "is_valid_qr",
+      "line_start": 120,
+      "line_end": 126,
+      "body_hash": "5052af00",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\views.py::compress_image",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 27,
+      "keywords": [
+        "compress_image",
+        "compress",
+        "image"
+      ],
+      "symbol_type": "use_case",
+      "name": "compress_image",
+      "line_start": 129,
+      "line_end": 155,
+      "body_hash": "dc5a04f5",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\views.py::scanner_ui",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 2,
+      "keywords": [
+        "scanner_ui",
+        "scanner"
+      ],
+      "symbol_type": "use_case",
+      "name": "scanner_ui",
+      "line_start": 157,
+      "line_end": 158,
+      "body_hash": "5d52e4ab",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\views.py::live_catalogue",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 54,
+      "keywords": [
+        "live_catalogue",
+        "live",
+        "catalogue"
+      ],
+      "symbol_type": "use_case",
+      "name": "live_catalogue",
+      "line_start": 159,
+      "line_end": 212,
+      "body_hash": "9bfbfb3d",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\views.py::log_inbound",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 57,
+      "keywords": [
+        "log_inbound",
+        "log",
+        "inbound"
+      ],
+      "symbol_type": "use_case",
+      "name": "log_inbound",
+      "line_start": 218,
+      "line_end": 274,
+      "body_hash": "da250aa9",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\views.py::log_outbound",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 44,
+      "keywords": [
+        "log_outbound",
+        "log",
+        "outbound"
+      ],
+      "symbol_type": "use_case",
+      "name": "log_outbound",
+      "line_start": 280,
+      "line_end": 323,
+      "body_hash": "71fa5f03",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\views.py::log_return",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 27,
+      "keywords": [
+        "log_return",
+        "log",
+        "return"
+      ],
+      "symbol_type": "use_case",
+      "name": "log_return",
+      "line_start": 329,
+      "line_end": 355,
+      "body_hash": "014ecf6c",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\views.py::financial_dashboard",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 18,
+      "keywords": [
+        "financial_dashboard",
+        "financial",
+        "dashboard"
+      ],
+      "symbol_type": "use_case",
+      "name": "financial_dashboard",
+      "line_start": 356,
+      "line_end": 373,
+      "body_hash": "4fa2bf5a",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\views.py::admin_dashboard_callback",
+      "kind": "symbol",
+      "path": "tracker\\views.py",
+      "ext": ".py",
+      "size": 11,
+      "keywords": [
+        "admin_dashboard_callback",
+        "admin",
+        "dashboard",
+        "callback"
+      ],
+      "symbol_type": "use_case",
+      "name": "admin_dashboard_callback",
+      "line_start": 374,
+      "line_end": 384,
+      "body_hash": "e1408830",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\__init__.py",
+      "kind": "file",
+      "path": "tracker\\__init__.py",
+      "ext": ".py",
+      "size": 0,
+      "keywords": [],
+      "content": "",
+      "summary": "Handles tracker   init.",
+      "file_hash": "d41d8cd9"
+    },
+    {
+      "id": "tracker\\migrations\\0001_initial.py",
+      "kind": "file",
+      "path": "tracker\\migrations\\0001_initial.py",
+      "ext": ".py",
+      "size": 1627,
+      "keywords": [
+        "migration"
+      ],
+      "content": "# Generated by Django 6.1 on 2026-08-12 17:24\n\nimport django.utils.timezone\nimport uuid\nfrom django.db import migrations, models\n\n\nclass Migration(migrations.Migration):\n\n    initial = True\n\n    dependencies = [\n    ]\n\n    operations = [\n        migrations.CreateModel(\n            name='FinishedProduct',\n            fields=[\n                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),\n                ('product_type', models.CharField(help_text='e.g., SUIT, SAREE, GHARARA', max_length=50)),\n                ('design_work', models.CharField(blank=True, help_text='e.g., JANGAL KADWA', max_length=100, null=True)),\n                ('weaver_name', models.CharField(blank=True, max_length=100, null=True)),\n                ('status', models.CharField(choices=[('IN_STOCK', 'In Stock'), ('DISPATCHED', 'Dispatched'), ('RETURNED', 'Returned')], default='IN_STOCK', max_length=20)),\n                ('date_entered', models.DateTimeField(default=django.utils.timezone.now)),\n                ('date_dispatched', models.DateTimeField(blank=True, null=True)),\n                ('sales_channel', models.CharField(blank=True, choices=[('RETAIL', 'Retail Shop'), ('WHOLESALE', 'Wholesale B2B'), ('ONLINE', 'Online E-commerce')], max_length=20, null=True)),\n                ('pincode', models.CharField(blank=True, max_length=6, null=True)),\n                ('derived_state', models.CharField(blank=True, max_length=50, null=True)),\n                ('derived_city', models.CharField(blank=True, max_length=50, null=True)),\n            ],\n        ),\n    ]\n",
+      "summary": "Generated by Django 6.1 on 2026-08-12 17:24. Contains 1 function: Migration.",
+      "file_hash": "eb681b66"
+    },
+    {
+      "id": "tracker\\migrations\\0001_initial.py::Migration",
+      "kind": "symbol",
+      "path": "tracker\\migrations\\0001_initial.py",
+      "ext": ".py",
+      "size": 25,
+      "keywords": [
+        "migration"
+      ],
+      "symbol_type": "model",
+      "name": "Migration",
+      "line_start": 7,
+      "line_end": 31,
+      "body_hash": "d5c33990",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\migrations\\0002_finishedproduct_product_image_and_more.py",
+      "kind": "file",
+      "path": "tracker\\migrations\\0002_finishedproduct_product_image_and_more.py",
+      "ext": ".py",
+      "size": 1913,
+      "keywords": [
+        "migration"
+      ],
+      "content": "# Generated by Django 6.1 on 2026-08-15 06:29\n\nimport uuid\nfrom django.db import migrations, models\n\n\nclass Migration(migrations.Migration):\n\n    dependencies = [\n        ('tracker', '0001_initial'),\n    ]\n\n    operations = [\n        migrations.AddField(\n            model_name='finishedproduct',\n            name='product_image',\n            field=models.ImageField(blank=True, null=True, upload_to='product_images/'),\n        ),\n        migrations.AlterField(\n            model_name='finishedproduct',\n            name='derived_city',\n            field=models.CharField(blank=True, db_index=True, max_length=50, null=True),\n        ),\n        migrations.AlterField(\n            model_name='finishedproduct',\n            name='derived_state',\n            field=models.CharField(blank=True, db_index=True, max_length=50, null=True),\n        ),\n        migrations.AlterField(\n            model_name='finishedproduct',\n            name='design_work',\n            field=models.CharField(blank=True, db_index=True, max_length=100, null=True),\n        ),\n        migrations.AlterField(\n            model_name='finishedproduct',\n            name='id',\n            field=models.CharField(default=uuid.uuid4, max_length=100, primary_key=True, serialize=False),\n        ),\n        migrations.AlterField(\n            model_name='finishedproduct',\n            name='pincode',\n            field=models.CharField(blank=True, db_index=True, max_length=6, null=True),\n        ),\n        migrations.AlterField(\n            model_name='finishedproduct',\n            name='product_type',\n            field=models.CharField(db_index=True, max_length=50),\n        ),\n        migrations.AlterField(\n            model_name='finishedproduct',\n            name='weaver_name',\n            field=models.CharField(blank=True, db_index=True, max_length=100, null=True),\n        ),\n    ]\n",
+      "summary": "Generated by Django 6.1 on 2026-08-15 06:29. Contains 1 function: Migration.",
+      "file_hash": "5447bb17"
+    },
+    {
+      "id": "tracker\\migrations\\0002_finishedproduct_product_image_and_more.py::Migration",
+      "kind": "symbol",
+      "path": "tracker\\migrations\\0002_finishedproduct_product_image_and_more.py",
+      "ext": ".py",
+      "size": 48,
+      "keywords": [
+        "migration"
+      ],
+      "symbol_type": "model",
+      "name": "Migration",
+      "line_start": 6,
+      "line_end": 53,
+      "body_hash": "9d467b6e",
+      "confidence": "high",
+      "exported": true
+    },
+    {
+      "id": "tracker\\migrations\\__init__.py",
+      "kind": "file",
+      "path": "tracker\\migrations\\__init__.py",
+      "ext": ".py",
+      "size": 0,
+      "keywords": [],
+      "content": "",
+      "summary": "Handles migrations   init.",
+      "file_hash": "d41d8cd9"
+    }
+  ],
+  "edges": [
+    {
+      "from": "manage.py",
+      "to": "os",
+      "rel": "imports"
+    },
+    {
+      "from": "manage.py",
+      "to": "sys",
+      "rel": "imports"
+    },
+    {
+      "from": "manage.py",
+      "to": "django.core.management",
+      "rel": "imports"
+    },
+    {
+      "from": "manage.py",
+      "to": "manage.py::main",
+      "rel": "contains"
+    },
+    {
+      "from": "qr_generator.py",
+      "to": "qrcode",
+      "rel": "imports"
+    },
+    {
+      "from": "qr_generator.py",
+      "to": "random",
+      "rel": "imports"
+    },
+    {
+      "from": "qr_generator.py",
+      "to": "string",
+      "rel": "imports"
+    },
+    {
+      "from": "qr_generator.py",
+      "to": "os",
+      "rel": "imports"
+    },
+    {
+      "from": "qr_generator.py",
+      "to": "dotenv",
+      "rel": "imports"
+    },
+    {
+      "from": "qr_generator.py",
+      "to": "qr_generator.py::generate_noise",
+      "rel": "contains"
+    },
+    {
+      "from": "qr_generator.py",
+      "to": "qr_generator.py::create_batch_qrs",
+      "rel": "contains"
+    },
+    {
+      "from": "whitelabel.py",
+      "to": "os",
+      "rel": "imports"
+    },
+    {
+      "from": "whitelabel.py",
+      "to": "subprocess",
+      "rel": "imports"
+    },
+    {
+      "from": "whitelabel.py",
+      "to": "re",
+      "rel": "imports"
+    },
+    {
+      "from": "whitelabel.py",
+      "to": "shutil",
+      "rel": "imports"
+    },
+    {
+      "from": "whitelabel.py",
+      "to": "whitelabel.py::update_env_file",
+      "rel": "contains"
+    },
+    {
+      "from": "whitelabel.py",
+      "to": "whitelabel.py::process_logo",
+      "rel": "contains"
+    },
+    {
+      "from": "whitelabel.py",
+      "to": "whitelabel.py::main",
+      "rel": "contains"
+    },
+    {
+      "from": "config\\asgi.py",
+      "to": "os",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\asgi.py",
+      "to": "django.core.asgi",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\settings.py",
+      "to": "os",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\settings.py",
+      "to": "pathlib",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\settings.py",
+      "to": "dotenv",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\urls.py",
+      "to": "django.contrib",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\urls.py",
+      "to": "django.urls",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\urls.py",
+      "to": "django.views.generic",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\urls.py",
+      "to": "tracker.views",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\wsgi.py",
+      "to": "os",
+      "rel": "imports"
+    },
+    {
+      "from": "config\\wsgi.py",
+      "to": "django.core.wsgi",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "csv",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "os",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "unfold.admin",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "django.contrib",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "django.utils.html",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "django.http",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "unfold.decorators",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": ".models",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "tracker\\admin.py::export_as_csv",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "tracker\\admin.py::FinishedProductAdmin",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\admin.py",
+      "to": "tracker\\admin.py::ResellerTokenAdmin",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\apps.py",
+      "to": "django.apps",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\apps.py",
+      "to": "tracker\\apps.py::TrackerConfig",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\context_processors.py",
+      "to": "os",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\context_processors.py",
+      "to": "django.conf",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\context_processors.py",
+      "to": "tracker\\context_processors.py::brand_context",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\models.py",
+      "to": "uuid",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\models.py",
+      "to": "secrets",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\models.py",
+      "to": "django.db",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\models.py",
+      "to": "django.utils",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\models.py",
+      "to": "tracker\\models.py::InventoryStatus",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\models.py",
+      "to": "tracker\\models.py::SalesChannel",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\models.py",
+      "to": "tracker\\models.py::FinishedProduct",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\models.py",
+      "to": "tracker\\models.py::ResellerToken",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\tests.py",
+      "to": "django.test",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\urls.py",
+      "to": "django.urls",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\urls.py",
+      "to": ".",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "requests",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "re",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "csv",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "io",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "sys",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "django.shortcuts",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "rest_framework.decorators",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "rest_framework.response",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "rest_framework",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "django.views.decorators.csrf",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "django.utils",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": ".models",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "django.db.models",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "django.http",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "PIL",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "django.core.files.uploadedfile",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::inventory_list_view",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::is_valid_qr",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::compress_image",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::scanner_ui",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::live_catalogue",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::log_inbound",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::log_outbound",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::log_return",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::financial_dashboard",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\views.py",
+      "to": "tracker\\views.py::admin_dashboard_callback",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\migrations\\0001_initial.py",
+      "to": "django.utils.timezone",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\migrations\\0001_initial.py",
+      "to": "uuid",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\migrations\\0001_initial.py",
+      "to": "django.db",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\migrations\\0001_initial.py",
+      "to": "tracker\\migrations\\0001_initial.py::Migration",
+      "rel": "contains"
+    },
+    {
+      "from": "tracker\\migrations\\0002_finishedproduct_product_image_and_more.py",
+      "to": "uuid",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\migrations\\0002_finishedproduct_product_image_and_more.py",
+      "to": "django.db",
+      "rel": "imports"
+    },
+    {
+      "from": "tracker\\migrations\\0002_finishedproduct_product_image_and_more.py",
+      "to": "tracker\\migrations\\0002_finishedproduct_product_image_and_more.py::Migration",
+      "rel": "contains"
+    }
+  ]
+}
