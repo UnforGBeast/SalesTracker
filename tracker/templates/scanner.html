@@ -3,26 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <div class="flex items-center gap-3">
-    {% if BRAND_LOGO %}
-        <img src="{{ BRAND_LOGO }}" alt="{{ BRAND_NAME }} Logo" class="h-8 w-auto object-contain">
-    {% endif %}
-    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ BRAND_NAME }}</h1>
-</div>
-    <title>{{ BRAND_NAME }} Scanner Dashboard</title>
-    <!-- HTML5 QR Code Scanner Library -->
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <title>{{ BRAND_NAME }} Scanner</title>
 
-<!-- Subtle scanning beep sound -->
-<audio id="beepSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Subtle scanning beep sound -->
+    <audio id="beepSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-sm border-x border-slate-200">
-        <div class="pt-8 pb-6 px-6 text-center border-b border-slate-100">
+
+        <div class="pt-8 pb-6 px-6 flex items-center justify-center gap-3 border-b border-slate-100">
+            {% if BRAND_LOGO %}
+                <img src="{{ BRAND_LOGO }}" alt="{{ BRAND_NAME }} Logo" class="h-8 w-auto object-contain">
+            {% endif %}
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ BRAND_NAME }}</h1>
         </div>
 
@@ -35,8 +33,9 @@
 
         <div class="p-6">
             <div id="reader" class="w-full bg-slate-900 rounded-xl overflow-hidden shadow-inner"></div>
-            <p id="scan-status" class="text-center mt-4 text-sm font-medium text-slate-500">Waiting for scanner...</p>
+            <p id="scan-status" class="text-center mt-4 text-sm font-medium text-slate-500">Starting camera&hellip;</p>
         </div>
+
         <div id="return-fields" class="px-6 pb-4 hidden text-center">
             <select id="return_reason" class="w-full p-3.5 bg-white border border-slate-300 rounded-lg text-sm mb-2 shadow-sm font-medium text-slate-700">
                 <option value="UNSOLD">Unsold / Stock Swap</option>
@@ -50,7 +49,7 @@
 
         <div id="form-container" class="px-6 pb-8 hidden">
             <input type="hidden" id="scanned-qr">
-            
+
             <div id="inbound-fields" class="space-y-3">
                 <select id="product_type" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
                     <option value="" disabled selected>Select Product Type</option>
@@ -62,12 +61,12 @@
                     <option value="SHARARA">Sharara</option>
                 </select>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 font-medium">₹</span>
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 font-medium">&#8377;</span>
                     <input type="number" id="price" placeholder="Selling Price" step="0.01" class="w-full p-3.5 pl-8 bg-slate-50 border rounded-lg text-sm">
                 </div>
                 <input type="text" id="design_work" placeholder="Design Work" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
                 <input type="text" id="weaver_name" placeholder="Weaver Name" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
-                
+
                 <label class="block text-sm font-medium text-slate-700 mt-2">Product Image (Optional)</label>
                 <input type="file" id="product_image" accept="image/*" capture="environment" class="w-full p-2 bg-slate-50 border rounded-lg text-sm text-slate-500">
             </div>
@@ -81,207 +80,270 @@
                     <option value="ONLINE">Online E-commerce</option>
                 </select>
             </div>
-            <!-- Bulk Mode Controls -->
-            <div id="bulk-mode-container" class="flex items-center gap-2 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-    <input type="checkbox" id="bulkMode" class="w-5 h-5 text-slate-800 border-slate-300 rounded focus:ring-slate-800 cursor-pointer">
-    <label for="bulkMode" class="text-sm font-semibold text-slate-700 cursor-pointer">
-        Bulk Scan Mode <span class="font-normal text-slate-500">(Retain product details & image)</span>
-    </label>
-</div>
-            </div>
-                <!-- Hidden field to hold the image path -->
-                <input type="hidden" id="reusedImagePath" name="reused_image_path" value="">
 
-               <button id="submit-btn" onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-6 shadow-sm">
+            <!-- Bulk Mode Controls -->
+            <div id="bulk-mode-container" class="flex items-center gap-2 mb-6 mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <input type="checkbox" id="bulkMode" class="w-5 h-5 text-slate-800 border-slate-300 rounded focus:ring-slate-800 cursor-pointer">
+                <label for="bulkMode" class="text-sm font-semibold text-slate-700 cursor-pointer">
+                    Bulk Scan Mode <span class="font-normal text-slate-500">(Retain product details &amp; image)</span>
+                </label>
+            </div>
+
+            <!-- Hidden field to hold the reused image path across bulk scans -->
+            <input type="hidden" id="reusedImagePath" name="reused_image_path" value="">
+
+            <button id="submit-btn" onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-2 shadow-sm active:bg-slate-800 disabled:opacity-50">
                 Save Record
             </button>
         </div>
     </div>
 
     <script>
+        /*
+         * Scanner lifecycle state machine
+         * --------------------------------
+         * SCANNING    camera live, a scan will be accepted
+         * LOCKED      a code has been read; waiting for the user to tap Save
+         * SUBMITTING  a request is in flight
+         * RESTARTING  camera is being torn down / brought back up
+         *
+         * Every completed transaction (success OR handled rejection) ends by putting
+         * the camera back into SCANNING via resumeScanner() (fast, bulk mode) or
+         * restartScanner() (guaranteed teardown+start, everything else). No code path
+         * leaves the camera frozen, so scanning works continuously without a refresh.
+         */
+        let scannerState = 'RESTARTING';
         let currentMode = 'INBOUND';
-        let html5QrCode;
+        let html5QrCode = null;
+
+        const $ = (id) => document.getElementById(id);
+        const STATE_PAUSED = (window.Html5QrcodeScannerState && Html5QrcodeScannerState.PAUSED) || 3;
+        const STATE_LIVE = (window.Html5QrcodeScannerState && Html5QrcodeScannerState.SCANNING) || 2;
+
+        function setStatus(msg, tone) {
+            const tones = {
+                idle: 'text-slate-500 font-medium',
+                good: 'text-emerald-600 font-semibold',
+                busy: 'text-blue-600 font-semibold',
+                bad: 'text-rose-600 font-semibold',
+                error: 'text-red-500 font-medium',
+            };
+            const el = $('scan-status');
+            el.innerText = msg;
+            el.className = 'text-center mt-4 text-sm ' + (tones[tone] || tones.idle);
+        }
 
         function setMode(mode) {
             currentMode = mode;
-            document.getElementById('inbound-fields').classList.toggle('hidden', mode !== 'INBOUND');
-            document.getElementById('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
-            document.getElementById('return-fields').classList.toggle('hidden', mode !== 'RETURN');
-            
-            // NEW: Hide the Bulk toggle if not on INBOUND
-            document.getElementById('bulk-mode-container').classList.toggle('hidden', mode !== 'INBOUND');
-            // Hide submit button entirely during return mode since it auto-submits
-            document.getElementById('submit-btn').classList.toggle('hidden', mode === 'RETURN');
-            
-            document.getElementById('btn-inbound').className = mode === 'INBOUND' ? "flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" : "flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent";
-            document.getElementById('btn-outbound').className = mode === 'OUTBOUND' ? "flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" : "flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent";
-            document.getElementById('btn-return').className = mode === 'RETURN' ? "flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" : "flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent";
-            
-            resetScanner();
+            $('inbound-fields').classList.toggle('hidden', mode !== 'INBOUND');
+            $('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
+            $('return-fields').classList.toggle('hidden', mode !== 'RETURN');
+            $('bulk-mode-container').classList.toggle('hidden', mode !== 'INBOUND');
+            $('submit-btn').classList.toggle('hidden', mode === 'RETURN');
+
+            const on = 'flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900';
+            const off = 'flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent';
+            $('btn-inbound').className = mode === 'INBOUND' ? on : off;
+            $('btn-outbound').className = mode === 'OUTBOUND' ? on : off;
+            $('btn-return').className = mode === 'RETURN' ? on : off;
+
+            fullReset();
+            restartScanner();
         }
 
- function onScanSuccess(decodedText) {
-    document.getElementById('scanned-qr').value = decodedText;
-    
-    // Always pause the camera immediately upon reading a code
-    if (html5QrCode) {
-        html5QrCode.pause(true);
-    }
-
-    const isBulkMode = document.getElementById('bulkMode') ? document.getElementById('bulkMode').checked : false;
-    const hasReusedImage = document.getElementById('reusedImagePath').value !== "";
-
-    if (currentMode === 'RETURN') {
-        document.getElementById('scan-status').innerText = "Processing Return...";
-        document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-blue-600";
-        submitData();
-    } 
-    else if (currentMode === 'INBOUND' && isBulkMode && hasReusedImage) {
-        // ACTIVE BULK LOOP: Auto-submit without waiting for the button tap!
-        document.getElementById('scan-status').innerText = `Logging Bulk Item: ${decodedText}...`;
-        document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-blue-600";
-        submitData();
-    } 
-    else {
-        // NORMAL INBOUND (First item in the batch)
-        document.getElementById('scan-status').innerText = "✓ QR Scanned Successfully";
-        document.getElementById('scan-status').className = "text-center mt-4 text-sm font-semibold text-emerald-600";
-        document.getElementById('form-container').classList.remove('hidden');
-    }
-}
-
-function resetScanner() {
-    document.getElementById('form-container').classList.add('hidden');
-    document.getElementById('scan-status').innerText = "Waiting for scanner...";
-    document.getElementById('scan-status').className = "text-center mt-4 text-sm font-medium text-slate-500";
-    
-    // Clear bulk mode locks
-    document.getElementById('reusedImagePath').value = '';
-    document.getElementById('product_image').disabled = false;
-    document.getElementById('bulkMode').checked = false;
-    
-    if (html5QrCode) {
-        try {
-            if (html5QrCode.getState() === 3) html5QrCode.resume();
-        } catch (e) {
-            startCamera();
-        }
-    }
-}
-
-async function submitData() {
-    let endpoint = '';
-    let formData = new FormData();
-    let reusedPath = ''; // FIX: Declared at the top so the whole function can see it
-    
-    const qrValue = document.getElementById('scanned-qr').value;
-    if (!qrValue) {
-        alert("No QR code detected!");
-        resetScanner();
-        return;
-    }
-    
-    formData.append('qr_id', qrValue);
-    
-    const isBulkMode = document.getElementById('bulkMode') ? document.getElementById('bulkMode').checked : false;
-
-    // Route matching your urls.py exactly
-    if (currentMode === 'INBOUND') {
-        endpoint = '/api/inbound/'; 
-        formData.append('product_type', document.getElementById('product_type').value);
-        formData.append('design_work', document.getElementById('design_work').value);
-        formData.append('price', document.getElementById('price').value);
-        formData.append('weaver_name', document.getElementById('weaver_name').value);
-        
-        reusedPath = document.getElementById('reusedImagePath').value;
-        if (reusedPath) {
-            formData.append('reused_image_path', reusedPath);
-        } else {
-            const imageFile = document.getElementById('product_image').files[0];
-            if (imageFile) formData.append('product_image', imageFile);
-        }
-    } else if (currentMode === 'OUTBOUND') {
-        endpoint = '/api/outbound/';
-        formData.append('pincode', document.getElementById('pincode').value);
-        formData.append('sales_channel', document.getElementById('sales_channel').value);
-    } else {
-        endpoint = '/api/return/';
-        formData.append('return_reason', document.getElementById('return_reason').value);
-    }
-
-    try {
-        let response = await fetch(endpoint, {
-            method: 'POST',
-            body: formData
-        });
-        
-        // UNMASK THE ERROR: Check if Django threw an HTML crash page (500 or 404)
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") === -1) {
-            console.error("Server crashed and returned HTML instead of JSON.");
-            alert(`Server Error (Status ${response.status}). Check Gunicorn logs!`);
-            resetScanner();
-            return;
+        // Return the form to a pristine "ready to scan the next item" state.
+        function fullReset() {
+            $('form-container').classList.add('hidden');
+            $('scanned-qr').value = '';
+            $('reusedImagePath').value = '';
+            $('product_image').disabled = false;
+            $('bulkMode').checked = false;
+            $('submit-btn').disabled = false;
         }
 
-        let result = await response.json();
-        
-        if (response.ok) {
-            document.getElementById('beepSound').play().catch(()=>{});
+        // ---- Camera control ----------------------------------------------------
 
-            if (currentMode === 'INBOUND' && isBulkMode) {
-                const statusEl = document.getElementById('scan-status');
-                statusEl.innerText = "✓ " + result.message;
-                statusEl.className = "text-center mt-4 text-sm font-semibold text-emerald-600";
-                
-                document.getElementById('reusedImagePath').value = result.saved_image_path || reusedPath;
-                document.getElementById('scanned-qr').value = '';
-                document.getElementById('product_image').disabled = true; 
-                
-                if (html5QrCode && html5QrCode.getState() === 3) html5QrCode.resume();
-            } else {
-                alert(result.message);
-                resetScanner();
-            }
-        } else {
-            // SERVER REJECTED SCAN (e.g., Duplicate item)
-            alert("Notice: " + (result.error || result.detail || "Server Rejected Scan"));
-            
-            if (currentMode === 'INBOUND' && isBulkMode) {
-                // BULK OVERRIDE: Show red warning, clear the bad QR, and immediately resume camera
-                const statusEl = document.getElementById('scan-status');
-                statusEl.innerText = "⚠ Skipped: " + (result.error || "Item rejected");
-                statusEl.className = "text-center mt-4 text-sm font-semibold text-rose-600";
-                
-                document.getElementById('scanned-qr').value = '';
-                if (html5QrCode && html5QrCode.getState() === 3) html5QrCode.resume();
-            } else {
-                // NORMAL MODE: Full reset
-                resetScanner();
+        async function startCamera() {
+            if (!html5QrCode) html5QrCode = new Html5Qrcode('reader');
+            try {
+                await html5QrCode.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    onScanSuccess,
+                    () => {}                 // per-frame decode miss: ignore quietly
+                );
+                scannerState = 'SCANNING';
+                setStatus('Ready — point the camera at a QR code', 'idle');
+                console.debug('[scanner] camera started');
+            } catch (err) {
+                scannerState = 'RESTARTING';
+                setStatus('Camera unavailable. Check permissions, then reload.', 'error');
+                console.error('[scanner] camera start failed', err);
             }
         }
-    } catch (error) {
-        console.error("Fatal JS Error: ", error);
-        alert("Fatal Error. Check console logs.");
-        resetScanner();
-    }
-}
 
-
-       
-        function startCamera() {
-            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                onScanSuccess
-            ).catch(err => {
-                document.getElementById('scan-status').innerText = "Camera denied.";
-                document.getElementById('scan-status').className = "text-center mt-4 text-sm font-medium text-red-500";
-            });
+        async function stopCamera() {
+            if (!html5QrCode) return;
+            try {
+                await html5QrCode.stop();
+            } catch (e) {
+                console.debug('[scanner] stop ignored:', e && e.message);
+            }
         }
-        window.onload = startCamera;
+
+        // Guaranteed-live camera: hard teardown + fresh start.
+        async function restartScanner() {
+            scannerState = 'RESTARTING';
+            setStatus('Resetting camera…', 'busy');
+            await stopCamera();
+            await startCamera();
+        }
+
+        // Fast path for bulk mode: resume the paused stream; fall back to a full
+        // restart if the library will not resume.
+        async function resumeScanner() {
+            try {
+                if (html5QrCode && html5QrCode.getState() === STATE_PAUSED) {
+                    html5QrCode.resume();
+                    scannerState = 'SCANNING';
+                    console.debug('[scanner] resumed');
+                    return;
+                }
+            } catch (e) {
+                console.debug('[scanner] resume failed, restarting:', e && e.message);
+            }
+            await restartScanner();
+        }
+
+        function pauseScanner() {
+            try {
+                if (html5QrCode && html5QrCode.getState() === STATE_LIVE) html5QrCode.pause(true);
+            } catch (e) {
+                console.debug('[scanner] pause ignored:', e && e.message);
+            }
+        }
+
+        // ---- Scan handling ---------------------------------------------------
+
+        function onScanSuccess(decodedText) {
+            // Re-entry guard: the decode callback fires ~10x/sec. Only the first
+            // hit while SCANNING counts; the rest are dropped until we are ready again.
+            if (scannerState !== 'SCANNING') return;
+
+            scannerState = 'LOCKED';
+            pauseScanner();
+            $('scanned-qr').value = decodedText;
+
+            const isBulk = $('bulkMode').checked;
+            const hasReusedImage = $('reusedImagePath').value !== '';
+
+            if (currentMode === 'RETURN') {
+                setStatus('Processing return…', 'busy');
+                submitData();
+            } else if (currentMode === 'INBOUND' && isBulk && hasReusedImage) {
+                setStatus('Logging bulk item: ' + decodedText + ' …', 'busy');
+                submitData();
+            } else {
+                setStatus('✓ QR scanned — fill in the details and tap Save', 'good');
+                $('form-container').classList.remove('hidden');
+                // stay LOCKED until the user taps Save
+            }
+        }
+
+        async function submitData() {
+            if (scannerState === 'SUBMITTING') return;     // guard double-tap / double-fire
+
+            const qrValue = $('scanned-qr').value;
+            if (!qrValue) {
+                setStatus('No QR code detected — scan again', 'bad');
+                await restartScanner();
+                return;
+            }
+
+            const isBulk = currentMode === 'INBOUND' && $('bulkMode').checked;
+            scannerState = 'SUBMITTING';
+            $('submit-btn').disabled = true;
+
+            const formData = new FormData();
+            formData.append('qr_id', qrValue);
+            let reusedPath = '';
+
+            if (currentMode === 'INBOUND') {
+                formData.append('product_type', $('product_type').value);
+                formData.append('design_work', $('design_work').value);
+                formData.append('price', $('price').value);
+                formData.append('weaver_name', $('weaver_name').value);
+
+                reusedPath = $('reusedImagePath').value;
+                if (reusedPath) {
+                    formData.append('reused_image_path', reusedPath);
+                } else {
+                    const imageFile = $('product_image').files[0];
+                    if (imageFile) formData.append('product_image', imageFile);
+                }
+            } else if (currentMode === 'OUTBOUND') {
+                formData.append('pincode', $('pincode').value);
+                formData.append('sales_channel', $('sales_channel').value);
+            } else {
+                formData.append('return_reason', $('return_reason').value);
+            }
+
+            const endpoint = currentMode === 'INBOUND' ? '/api/inbound/'
+                : currentMode === 'OUTBOUND' ? '/api/outbound/'
+                : '/api/return/';
+
+            try {
+                const response = await fetch(endpoint, { method: 'POST', body: formData });
+
+                // Unmask a Django HTML error page (500/404) instead of choking on JSON.parse.
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.indexOf('application/json') === -1) {
+                    console.error('[scanner] non-JSON response, status', response.status);
+                    alert('Server error (status ' + response.status + '). Check the server logs.');
+                    fullReset();
+                    await restartScanner();
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    $('beepSound').play().catch(() => {});
+
+                    if (isBulk) {
+                        setStatus('✓ ' + result.message, 'good');
+                        $('reusedImagePath').value = result.saved_image_path || reusedPath;
+                        $('scanned-qr').value = '';
+                        $('product_image').disabled = true;
+                        $('submit-btn').disabled = false;
+                        await resumeScanner();           // fast continuous loop
+                    } else {
+                        alert(result.message);
+                        fullReset();
+                        await restartScanner();          // back to a live camera
+                    }
+                } else {
+                    const msg = result.error || result.detail || 'Server rejected the scan';
+                    if (isBulk) {
+                        setStatus('⚠ Skipped: ' + msg, 'bad');
+                        $('scanned-qr').value = '';
+                        $('submit-btn').disabled = false;
+                        await resumeScanner();
+                    } else {
+                        alert('Notice: ' + msg);
+                        fullReset();
+                        await restartScanner();
+                    }
+                }
+            } catch (error) {
+                console.error('[scanner] fatal error', error);
+                alert('Network error. Check your connection and try again.');
+                fullReset();
+                await restartScanner();
+            }
+        }
+
+        window.addEventListener('load', () => { setMode('INBOUND'); });
     </script>
-   
 </body>
 </html>
