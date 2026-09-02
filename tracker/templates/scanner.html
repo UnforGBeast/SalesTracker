@@ -107,10 +107,10 @@
          * SUBMITTING  a request is in flight
          * RESTARTING  camera is being torn down / brought back up
          *
-         * Every completed transaction (success OR handled rejection) ends by putting
-         * the camera back into SCANNING via resumeScanner() (fast, bulk mode) or
-         * restartScanner() (guaranteed teardown+start, everything else). No code path
-         * leaves the camera frozen, so scanning works continuously without a refresh.
+         * Every completed transaction (success OR handled rejection) ends by calling
+         * resumeScanner(), which un-pauses the live stream (instant) and only falls
+         * back to a full restartScanner() teardown if the camera is actually broken.
+         * No code path leaves the camera frozen, so scanning continues without a refresh.
          */
         let scannerState = 'RESTARTING';
         let currentMode = 'INBOUND';
@@ -148,7 +148,7 @@
             $('btn-return').className = mode === 'RETURN' ? on : off;
 
             fullReset();
-            restartScanner();
+            resumeScanner();
         }
 
         // Return the form to a pristine "ready to scan the next item" state.
@@ -191,7 +191,10 @@
             }
         }
 
-        // Guaranteed-live camera: hard teardown + fresh start.
+        // Cold start / recovery only: full teardown + fresh start. Avoid on the
+        // normal scan->save->scan loop -- stop() resolves before the camera track
+        // is actually released, so an immediate start() can grab a half-released
+        // camera and show a frozen frame.
         async function restartScanner() {
             scannerState = 'RESTARTING';
             setStatus('Resetting camera…', 'busy');
@@ -199,11 +202,18 @@
             await startCamera();
         }
 
-        // Fast path for bulk mode: resume the paused stream; fall back to a full
-        // restart if the library will not resume.
+        // The one call every post-scan path uses. Handles all three cases:
+        //   - camera already live  -> nothing to do
+        //   - camera paused        -> resume() (instant, this is the happy path)
+        //   - no camera / broken   -> fall back to a full restart
         async function resumeScanner() {
             try {
-                if (html5QrCode && html5QrCode.getState() === STATE_PAUSED) {
+                const st = html5QrCode ? html5QrCode.getState() : null;
+                if (st === STATE_LIVE) {
+                    scannerState = 'SCANNING';
+                    return;
+                }
+                if (st === STATE_PAUSED) {
                     html5QrCode.resume();
                     scannerState = 'SCANNING';
                     console.debug('[scanner] resumed');
@@ -256,7 +266,7 @@
             const qrValue = $('scanned-qr').value;
             if (!qrValue) {
                 setStatus('No QR code detected — scan again', 'bad');
-                await restartScanner();
+                await resumeScanner();
                 return;
             }
 
@@ -301,7 +311,7 @@
                     console.error('[scanner] non-JSON response, status', response.status);
                     alert('Server error (status ' + response.status + '). Check the server logs.');
                     fullReset();
-                    await restartScanner();
+                    await resumeScanner();
                     return;
                 }
 
@@ -320,7 +330,7 @@
                     } else {
                         alert(result.message);
                         fullReset();
-                        await restartScanner();          // back to a live camera
+                        await resumeScanner();          // un-pause; this is the normal loop
                     }
                 } else {
                     const msg = result.error || result.detail || 'Server rejected the scan';
@@ -332,14 +342,14 @@
                     } else {
                         alert('Notice: ' + msg);
                         fullReset();
-                        await restartScanner();
+                        await resumeScanner();
                     }
                 }
             } catch (error) {
                 console.error('[scanner] fatal error', error);
                 alert('Network error. Check your connection and try again.');
                 fullReset();
-                await restartScanner();
+                await resumeScanner();
             }
         }
 
