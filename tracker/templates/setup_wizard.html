@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set up your instance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = {{ BRAND_TAILWIND_CONFIG|safe }};</script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
+
+    <div class="max-w-2xl mx-auto py-10 px-4 sm:py-16">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Welcome — let's set this up</h1>
+            <p class="text-slate-500 mt-2">This runs once. Pick a name, a color, and a logo — you can change all of this later from the admin.</p>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 sm:p-8 space-y-8">
+            {% csrf_token %}
+
+            <!-- Quick-start profile -->
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-3">Quick start</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {% for key, label, hexval, tagline in presets %}
+                    <button type="button"
+                            class="preset-btn flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2.5 text-left text-sm hover:border-slate-400 transition"
+                            data-name="{% if key == 'textiler' %}Textiler{% else %}{{ label }}{% endif %}"
+                            data-hex="{{ hexval }}"
+                            data-tagline="{{ tagline }}">
+                        <span class="w-5 h-5 rounded-full border border-slate-300 flex-shrink-0" style="background:{{ hexval }};"></span>
+                        <span class="truncate">{{ label }}</span>
+                    </button>
+                    {% endfor %}
+                </div>
+                <p class="text-xs text-slate-400 mt-2">Picking one fills in the fields below — everything stays editable.</p>
+            </div>
+
+            <!-- Identity -->
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1" for="brand_name">Company / brand name</label>
+                    <input type="text" id="brand_name" name="brand_name" required maxlength="100"
+                           value="{{ config.brand_name }}"
+                           class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1" for="currency_symbol">Currency symbol</label>
+                    <input type="text" id="currency_symbol" name="currency_symbol" required maxlength="5"
+                           value="{{ config.currency_symbol }}"
+                           class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1" for="tagline">Tagline <span class="font-normal text-slate-400">(optional)</span></label>
+                <input type="text" id="tagline" name="tagline" maxlength="200"
+                       value="{{ config.tagline }}" placeholder="One line describing what you do"
+                       class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+
+            <!-- Color -->
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1">Brand color</label>
+                <div class="flex items-center gap-3">
+                    <input type="color" id="accent_picker" value="{{ config.accent_hex }}"
+                           class="h-11 w-14 rounded-lg border border-slate-200 cursor-pointer">
+                    <input type="text" id="accent_hex" name="accent_hex" required pattern="^#[0-9A-Fa-f]{6}$"
+                           value="{{ config.accent_hex }}"
+                           class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+                <p class="text-xs text-slate-400 mt-2">Used for buttons, badges, and the sidebar across every page.</p>
+            </div>
+
+            <!-- Logo -->
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1">Logo</label>
+                {% if brand_assets %}
+                <p class="text-xs text-slate-500 mb-2">Found in your <code>/brand</code> folder — pick one, or upload a different file below.</p>
+                <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-3">
+                    {% for asset in brand_assets %}
+                    <label class="asset-choice cursor-pointer border-2 border-transparent rounded-lg p-2 flex items-center justify-center bg-slate-50 hover:bg-slate-100">
+                        <input type="radio" name="brand_asset" value="{{ asset }}" class="sr-only">
+                        <img src="{% url 'serve_brand_asset' asset %}" alt="{{ asset }}" class="h-10 w-10 object-contain">
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <input type="file" name="logo" accept="image/*"
+                       class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500">
+            </div>
+
+            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm py-3.5 rounded-lg shadow-sm transition-colors">
+                Save and continue
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const nameInput = document.getElementById('brand_name');
+        const taglineInput = document.getElementById('tagline');
+        const hexInput = document.getElementById('accent_hex');
+        const picker = document.getElementById('accent_picker');
+
+        picker.addEventListener('input', () => { hexInput.value = picker.value; });
+        hexInput.addEventListener('input', () => {
+            if (/^#[0-9A-Fa-f]{6}$/.test(hexInput.value)) picker.value = hexInput.value;
+        });
+
+        document.querySelectorAll('.preset-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                hexInput.value = btn.dataset.hex;
+                picker.value = btn.dataset.hex;
+                if (!nameInput.value.trim() || nameInput.dataset.touched !== 'true') {
+                    nameInput.value = btn.dataset.name;
+                }
+                if (btn.dataset.tagline) taglineInput.value = btn.dataset.tagline;
+            });
+        });
+        nameInput.addEventListener('input', () => { nameInput.dataset.touched = 'true'; });
+
+        document.querySelectorAll('.asset-choice').forEach((label) => {
+            label.addEventListener('click', () => {
+                document.querySelectorAll('.asset-choice').forEach((l) => l.classList.remove('border-brand-500'));
+                label.classList.add('border-brand-500');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -9,4 +9,5 @@ PRD.md
 /.claude
 /brand
 /.dual-graph
-CLAUDE.md
+__pycache__/
+*.pyc

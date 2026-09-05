@@ -3,9 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="{{ BRAND_ACCENT_HEX }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="{{ BRAND_NAME }}">
+    <link rel="manifest" href="{% url 'pwa_manifest' %}">
+    <link rel="apple-touch-icon" href="{{ BRAND_LOGO }}">
     <title>{{ BRAND_NAME }} Scanner</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = {{ BRAND_TAILWIND_CONFIG|safe }};</script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Inter', sans-serif; }</style>
@@ -17,18 +24,22 @@
 
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-sm border-x border-slate-200">
 
-        <div class="pt-8 pb-6 px-6 flex items-center justify-center gap-3 border-b border-slate-100">
-            {% if BRAND_LOGO %}
-                <img src="{{ BRAND_LOGO }}" alt="{{ BRAND_NAME }} Logo" class="h-8 w-auto object-contain">
-            {% endif %}
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ BRAND_NAME }}</h1>
+        <div class="pt-8 pb-6 px-6 flex items-center justify-between border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                {% if BRAND_LOGO %}
+                    <img src="{{ BRAND_LOGO }}" alt="{{ BRAND_NAME }} Logo" class="h-8 w-auto object-contain">
+                {% endif %}
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ BRAND_NAME }}</h1>
+            </div>
+            <a href="{% url 'scanner_logout' %}" class="text-xs font-medium text-slate-400 hover:text-slate-600">Log out</a>
         </div>
 
-        <!-- 3-Way Mode Selector -->
+        <!-- 4-Way Mode Selector -->
         <div class="flex border-b border-slate-200 text-center">
-            <button id="btn-inbound" class="flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900" onclick="setMode('INBOUND')">INBOUND</button>
-            <button id="btn-outbound" class="flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent" onclick="setMode('OUTBOUND')">DISPATCH</button>
-            <button id="btn-return" class="flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent" onclick="setMode('RETURN')">RETURN</button>
+            <button id="btn-inbound" class="flex-1 py-4 text-xs font-semibold border-b-2" onclick="setMode('INBOUND')">INBOUND</button>
+            <button id="btn-outbound" class="flex-1 py-4 text-xs font-medium border-b-2" onclick="setMode('OUTBOUND')">DISPATCH</button>
+            <button id="btn-return" class="flex-1 py-4 text-xs font-medium border-b-2" onclick="setMode('RETURN')">RETURN</button>
+            <button id="btn-lookup" class="flex-1 py-4 text-xs font-medium border-b-2" onclick="setMode('LOOKUP')">LOOKUP</button>
         </div>
 
         <div class="p-6">
@@ -47,6 +58,23 @@
             <p class="text-sm text-slate-600 font-medium">Select a reason above, then scan the barcode to process.</p>
         </div>
 
+        <!-- LOOKUP mode: read-only result card, no form/submit involved -->
+        <div id="lookup-result" class="px-6 pb-6 hidden">
+            <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                <div class="flex gap-4">
+                    <div id="lookup-image-wrap" class="w-16 h-16 rounded-lg bg-slate-200 flex-shrink-0 overflow-hidden hidden">
+                        <img id="lookup-image" class="w-full h-full object-cover" alt="">
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p id="lookup-title" class="text-sm font-bold text-slate-900 uppercase truncate">—</p>
+                        <p id="lookup-id" class="text-xs text-slate-500 font-mono mt-0.5">—</p>
+                        <span id="lookup-status-badge" class="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-bold"></span>
+                    </div>
+                </div>
+                <dl id="lookup-details" class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm"></dl>
+            </div>
+        </div>
+
         <div id="form-container" class="px-6 pb-8 hidden">
             <input type="hidden" id="scanned-qr">
 
@@ -61,7 +89,7 @@
                     <option value="SHARARA">Sharara</option>
                 </select>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 font-medium">&#8377;</span>
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 font-medium">{{ CURRENCY_SYMBOL }}</span>
                     <input type="number" id="price" placeholder="Selling Price" step="0.01" class="w-full p-3.5 pl-8 bg-slate-50 border rounded-lg text-sm">
                 </div>
                 <input type="text" id="design_work" placeholder="Design Work" class="w-full p-3.5 bg-slate-50 border rounded-lg text-sm">
@@ -83,7 +111,7 @@
 
             <!-- Bulk Mode Controls -->
             <div id="bulk-mode-container" class="flex items-center gap-2 mb-6 mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <input type="checkbox" id="bulkMode" class="w-5 h-5 text-slate-800 border-slate-300 rounded focus:ring-slate-800 cursor-pointer">
+                <input type="checkbox" id="bulkMode" class="w-5 h-5 text-brand-700 border-slate-300 rounded focus:ring-brand-700 cursor-pointer">
                 <label for="bulkMode" class="text-sm font-semibold text-slate-700 cursor-pointer">
                     Bulk Scan Mode <span class="font-normal text-slate-500">(Retain product details &amp; image)</span>
                 </label>
@@ -92,7 +120,7 @@
             <!-- Hidden field to hold the reused image path across bulk scans -->
             <input type="hidden" id="reusedImagePath" name="reused_image_path" value="">
 
-            <button id="submit-btn" onclick="submitData()" class="w-full bg-slate-900 text-white font-medium text-sm py-4 rounded-lg mt-2 shadow-sm active:bg-slate-800 disabled:opacity-50">
+            <button id="submit-btn" onclick="submitData()" class="w-full bg-brand-700 text-white font-medium text-sm py-4 rounded-lg mt-2 shadow-sm active:bg-brand-800 disabled:opacity-50">
                 Save Record
             </button>
         </div>
@@ -103,7 +131,8 @@
          * Scanner lifecycle state machine
          * --------------------------------
          * SCANNING    camera live, a scan will be accepted
-         * LOCKED      a code has been read; waiting for the user to tap Save
+         * LOCKED      a code has been read; waiting for the user to tap Save (or,
+         *             in LOOKUP mode, waiting for the lookup request to finish)
          * SUBMITTING  a request is in flight
          * RESTARTING  camera is being torn down / brought back up
          *
@@ -119,6 +148,8 @@
         const $ = (id) => document.getElementById(id);
         const STATE_PAUSED = (window.Html5QrcodeScannerState && Html5QrcodeScannerState.PAUSED) || 3;
         const STATE_LIVE = (window.Html5QrcodeScannerState && Html5QrcodeScannerState.SCANNING) || 2;
+        const INITIAL_MODE = '{{ initial_mode|default:"INBOUND" }}';
+        const VALID_MODES = ['INBOUND', 'OUTBOUND', 'RETURN', 'LOOKUP'];
 
         function setStatus(msg, tone) {
             const tones = {
@@ -139,13 +170,16 @@
             $('outbound-fields').classList.toggle('hidden', mode !== 'OUTBOUND');
             $('return-fields').classList.toggle('hidden', mode !== 'RETURN');
             $('bulk-mode-container').classList.toggle('hidden', mode !== 'INBOUND');
-            $('submit-btn').classList.toggle('hidden', mode === 'RETURN');
+            $('form-container').classList.add('hidden');
+            $('lookup-result').classList.add('hidden');
+            $('submit-btn').classList.toggle('hidden', mode === 'RETURN' || mode === 'LOOKUP');
 
-            const on = 'flex-1 py-4 text-xs font-semibold text-slate-900 border-b-2 border-slate-900';
-            const off = 'flex-1 py-4 text-xs font-medium text-slate-400 border-b-2 border-transparent';
+            const on = 'flex-1 py-4 text-xs font-semibold border-b-2 border-brand-700 text-brand-700';
+            const off = 'flex-1 py-4 text-xs font-medium border-b-2 border-transparent text-slate-400';
             $('btn-inbound').className = mode === 'INBOUND' ? on : off;
             $('btn-outbound').className = mode === 'OUTBOUND' ? on : off;
             $('btn-return').className = mode === 'RETURN' ? on : off;
+            $('btn-lookup').className = mode === 'LOOKUP' ? on : off;
 
             fullReset();
             resumeScanner();
@@ -247,7 +281,10 @@
             const isBulk = $('bulkMode').checked;
             const hasReusedImage = $('reusedImagePath').value !== '';
 
-            if (currentMode === 'RETURN') {
+            if (currentMode === 'LOOKUP') {
+                setStatus('Looking up ' + decodedText + ' …', 'busy');
+                performLookup(decodedText);
+            } else if (currentMode === 'RETURN') {
                 setStatus('Processing return…', 'busy');
                 submitData();
             } else if (currentMode === 'INBOUND' && isBulk && hasReusedImage) {
@@ -257,6 +294,79 @@
                 setStatus('✓ QR scanned — fill in the details and tap Save', 'good');
                 $('form-container').classList.remove('hidden');
                 // stay LOCKED until the user taps Save
+            }
+        }
+
+        // ---- LOOKUP mode: read-only, no submit involved ------------------------
+
+        function renderLookupRow(dl, label, value) {
+            if (!value) return;
+            const dt = document.createElement('dt');
+            dt.className = 'text-slate-400 font-medium';
+            dt.innerText = label;
+            const dd = document.createElement('dd');
+            dd.className = 'text-slate-700 text-right';
+            dd.innerText = value;
+            dl.appendChild(dt);
+            dl.appendChild(dd);
+        }
+
+        const STATUS_BADGE_CLASSES = {
+            IN_STOCK: 'bg-emerald-100 text-emerald-800',
+            DISPATCHED: 'bg-brand-100 text-brand-800',
+            RETURNED: 'bg-rose-100 text-rose-800',
+        };
+
+        async function performLookup(qrId) {
+            scannerState = 'SUBMITTING';
+            try {
+                const response = await fetch('/api/lookup/?qr_id=' + encodeURIComponent(qrId));
+                const result = await response.json().catch(() => ({}));
+
+                $('lookup-result').classList.remove('hidden');
+                const dl = $('lookup-details');
+                dl.innerHTML = '';
+
+                if (response.ok) {
+                    $('lookup-title').innerText = result.product_type + (result.is_dead_stock ? ' · DEAD STOCK' : '');
+                    $('lookup-id').innerText = '#' + result.id;
+                    const badge = $('lookup-status-badge');
+                    badge.innerText = result.status_display;
+                    badge.className = 'inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-bold ' +
+                        (STATUS_BADGE_CLASSES[result.status] || 'bg-slate-200 text-slate-700');
+
+                    if (result.image_url) {
+                        $('lookup-image').src = result.image_url;
+                        $('lookup-image-wrap').classList.remove('hidden');
+                    } else {
+                        $('lookup-image-wrap').classList.add('hidden');
+                    }
+
+                    renderLookupRow(dl, 'Price', '{{ CURRENCY_SYMBOL }}' + result.price);
+                    renderLookupRow(dl, 'Weaver', result.weaver_name);
+                    renderLookupRow(dl, 'Design', result.design_work);
+                    renderLookupRow(dl, 'Entered', result.date_entered);
+                    renderLookupRow(dl, 'Dispatched', result.date_dispatched);
+                    renderLookupRow(dl, 'Channel', result.sales_channel);
+                    renderLookupRow(dl, 'Destination', [result.derived_city, result.derived_state].filter(Boolean).join(', '));
+                    renderLookupRow(dl, 'Return reason', result.return_reason);
+
+                    setStatus('✓ Showing details for ' + result.id, 'good');
+                } else {
+                    $('lookup-title').innerText = 'Not found';
+                    $('lookup-id').innerText = '#' + qrId;
+                    $('lookup-image-wrap').classList.add('hidden');
+                    const badge = $('lookup-status-badge');
+                    badge.innerText = 'NO RECORD';
+                    badge.className = 'inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-600';
+                    setStatus('⚠ ' + (result.error || 'No product found for this QR code'), 'bad');
+                }
+            } catch (error) {
+                console.error('[scanner] lookup failed', error);
+                setStatus('Network error during lookup', 'bad');
+            } finally {
+                $('scanned-qr').value = '';
+                await resumeScanner();
             }
         }
 
@@ -353,7 +463,15 @@
             }
         }
 
-        window.addEventListener('load', () => { setMode('INBOUND'); });
+        window.addEventListener('load', () => {
+            setMode(VALID_MODES.includes(INITIAL_MODE) ? INITIAL_MODE : 'INBOUND');
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch((err) => {
+                    console.debug('[scanner] service worker registration failed:', err && err.message);
+                });
+            }
+        });
     </script>
 </body>
 </html>
