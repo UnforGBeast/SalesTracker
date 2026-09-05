@@ -1,0 +1,8 @@
+<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Default "loom gate" mark from the Textiler brand kit (brand/textiler-brand-kit.html).
+       Used until a custom logo is uploaded via /setup/ or the admin. -->
+  <line x1="10" y1="16" x2="46" y2="16" stroke="#C8A46E" stroke-width="4" stroke-linecap="round"/>
+  <line x1="28" y1="16" x2="28" y2="44" stroke="#C8A46E" stroke-width="4" stroke-linecap="round"/>
+  <rect x="23" y="39" width="10" height="10" rx="2" fill="#C8A46E" transform="rotate(45 28 44)"/>
+  <line x1="16" y1="30" x2="40" y2="30" stroke="#C8A46E" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+</svg>

@@ -80,7 +80,6 @@ ALLOWED_HOSTS = [host.strip().replace('"', '').replace("'", "") for host in raw_
 # Failsafe: If the .env is totally empty, at least allow localhost
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 
 # Application definition
@@ -105,7 +104,14 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'tracker.middleware.SetupWizardMiddleware',
 ]
+
+# Internal pages (scanner/inventory/dashboard) require a login; the reseller
+# catalogue and the three scan APIs are intentionally unauthenticated (see
+# CLAUDE.md) and untouched by this.
+LOGIN_URL = 'scanner_login'
+LOGIN_REDIRECT_URL = '/scanner/'
 
 ROOT_URLCONF = 'config.urls'
 
@@ -215,6 +221,7 @@ UNFOLD = {
                     {"title": "Financial Dashboard", "icon": "monitoring", "link": "/dashboard/"},
                     {"title": "Live Catalogue", "icon": "storefront", "link": "/catalogue/"},
                     {"title": "Barcode Scanner", "icon": "qr_code_scanner", "link": "/scanner/"},
+                    {"title": "Scan Lookup", "icon": "search", "link": "/scanner/?mode=LOOKUP"},
                 ],
             },
         ],

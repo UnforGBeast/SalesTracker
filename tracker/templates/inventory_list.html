@@ -6,8 +6,8 @@
 
 
 <!-- Dynamic Financial Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
     <!-- Capital In Warehouse Card -->
     <div class="bg-white rounded-xl shadow-sm border-t-4 border-t-{{ BRAND_COLOR }}-500 p-6 flex flex-col justify-between transition-transform hover:-translate-y-1 duration-200">
         <div>
@@ -20,7 +20,7 @@
             </span>
         </div>
     </div>
-    
+
     <!-- Total Dispatched Sales Card -->
     <div class="bg-white rounded-xl shadow-sm border-t-4 border-t-emerald-500 p-6 flex flex-col justify-between transition-transform hover:-translate-y-1 duration-200">
         <div>
@@ -33,7 +33,20 @@
             </span>
         </div>
     </div>
-    
+
+    <!-- Dead Stock Card -->
+    <div class="bg-white rounded-xl shadow-sm border-t-4 border-t-stone-400 p-6 flex flex-col justify-between transition-transform hover:-translate-y-1 duration-200">
+        <div>
+            <p class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Dead Stock Value</p>
+            <h3 class="text-4xl font-bold text-slate-900 mb-2">{{ CURRENCY_SYMBOL }}{{ dead_stock_value|floatformat:2 }}</h3>
+        </div>
+        <div class="mt-4">
+            <span class="inline-flex items-center gap-1 text-sm font-medium text-stone-600 bg-stone-100 px-2 py-1 rounded-md">
+                {{ dead_stock_count }} Items Flagged
+            </span>
+        </div>
+    </div>
+
 </div>
 
 
@@ -65,6 +78,12 @@
                     <option value="DISPATCHED" {% if current_status == 'DISPATCHED' %}selected{% endif %}>Dispatched</option>
                     <option value="RETURNED" {% if current_status == 'RETURNED' %}selected{% endif %}>Returned</option>
                 </select>
+
+                <select name="dead_stock" class="bg-white border border-slate-200 rounded-lg text-sm text-slate-600 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-{{ BRAND_COLOR }}-500 w-full sm:w-auto">
+                    <option value="">All Stock</option>
+                    <option value="only" {% if dead_stock_filter == 'only' %}selected{% endif %}>Dead Stock Only</option>
+                    <option value="exclude" {% if dead_stock_filter == 'exclude' %}selected{% endif %}>Exclude Dead Stock</option>
+                </select>
             </div>
 
             <!-- Advanced Filters Grid (Dates, Price, Pincode) -->
@@ -94,7 +113,7 @@
                 </button>
                 
                 <!-- Clear Filters Button -->
-                {% if current_status or search_query or start_date or end_date or min_price or max_price or pincode %}
+                {% if current_status or search_query or start_date or end_date or min_price or max_price or pincode or dead_stock_filter %}
                 <a href="{% url 'inventory_list' %}" class="text-sm font-medium text-rose-600 hover:text-rose-700 transition-colors">Clear All</a>
                 {% endif %}
             </div>
@@ -143,6 +162,7 @@
 
                     <!-- Dynamic Status Badges -->
                     <td class="py-4 px-6">
+                        <div class="flex flex-wrap items-center gap-1.5">
                         {% if item.status == 'IN_STOCK' %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                 In Stock
@@ -157,6 +177,12 @@
                                 {{ item.status }}
                             </span>
                         {% endif %}
+                        {% if item.is_dead_stock %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-stone-200 text-stone-700 border border-stone-300">
+                                Dead Stock
+                            </span>
+                        {% endif %}
+                        </div>
                     </td>
 
                     <!-- Dates -->

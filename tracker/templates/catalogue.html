@@ -43,9 +43,9 @@
 
         <!-- 2. Price Range -->
         <div class="flex items-center gap-2 w-full md:w-1/4">
-            <input type="number" name="min_price" value="{{ min_price }}" placeholder="Min ₹" class="w-1/2 border border-slate-200 rounded-lg text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-slate-500">
+            <input type="number" name="min_price" value="{{ min_price }}" placeholder="Min {{ CURRENCY_SYMBOL }}" class="w-1/2 border border-slate-200 rounded-lg text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-slate-500">
             <span class="text-slate-400">-</span>
-            <input type="number" name="max_price" value="{{ max_price }}" placeholder="Max ₹" class="w-1/2 border border-slate-200 rounded-lg text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-slate-500">
+            <input type="number" name="max_price" value="{{ max_price }}" placeholder="Max {{ CURRENCY_SYMBOL }}" class="w-1/2 border border-slate-200 rounded-lg text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-slate-500">
         </div>
 
         <!-- 3. Action Buttons -->
@@ -91,11 +91,16 @@
                         </div>
                         <div class="text-right">
                             <span class="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
-                                ₹{{ product.price|floatformat:2 }}
+                                {{ CURRENCY_SYMBOL }}{{ product.price|floatformat:2 }}
                             </span>
                         </div>
                     </div>
-                    
+                    {% if product.is_dead_stock %}
+                        <span class="inline-block mb-2 text-xs font-bold uppercase tracking-wide text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                            Clearance
+                        </span>
+                    {% endif %}
+
                     {% if product.design_work %}
                         <p class="text-sm text-slate-600 mb-1 mt-3"><span class="font-medium">Design:</span> {{ product.design_work }}</p>
                     {% endif %}
